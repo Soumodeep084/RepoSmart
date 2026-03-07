@@ -1,5 +1,6 @@
 import { Button } from "../ui/button";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface HeaderProps {
   onLogin: () => void;
@@ -7,8 +8,26 @@ interface HeaderProps {
 }
 
 export function Header({ onLogin, onRegister }: HeaderProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+  const motionProps = shouldReduceMotion
+    ? ({
+        initial: false,
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0 },
+      } as const)
+    : ({
+        initial: { opacity: 0, y: -12 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.55, ease },
+      } as const);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#30363d] bg-[#0d1117]/95 backdrop-blur-md">
+    <motion.header
+      {...motionProps}
+      className="sticky top-0 z-50 w-full border-b border-[#30363d] bg-[#0d1117]/95 backdrop-blur-md"
+    >
       {/* Adjusted padding for mobile */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex h-16 items-center justify-between">
@@ -69,6 +88,6 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
           </div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

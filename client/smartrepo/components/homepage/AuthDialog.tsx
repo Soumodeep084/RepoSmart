@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -90,6 +91,40 @@ export function AuthDialog({
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
+  const shouldReduceMotion = useReducedMotion();
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+  const containerVariants = shouldReduceMotion
+    ? ({
+        hidden: { opacity: 1, y: 0, scale: 1 },
+        show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0 } },
+      } as const)
+    : ({
+        hidden: { opacity: 0, y: 18, scale: 0.99 },
+        show: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          transition: {
+            duration: 0.38,
+            ease,
+            when: "beforeChildren",
+            staggerChildren: 0.06,
+            delayChildren: 0.04,
+          },
+        },
+      } as const);
+
+  const itemVariants = shouldReduceMotion
+    ? ({
+        hidden: { opacity: 1, y: 0 },
+        show: { opacity: 1, y: 0, transition: { duration: 0 } },
+      } as const)
+    : ({
+        hidden: { opacity: 0, y: 10 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.26, ease } },
+      } as const);
+
   // Form States
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -139,22 +174,53 @@ export function AuthDialog({
               height={40}
             />
             <DialogTitle className="text-white text-lg sm:text-xl">
-              {isForgotPassword ? "Reset Password" : "Welcome to RepoSmart"}
+              <motion.span
+                key={isForgotPassword ? "forgot-title" : "auth-title"}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease }}
+                className="inline-block"
+              >
+                {isForgotPassword ? "Reset Password" : "Welcome to RepoSmart"}
+              </motion.span>
             </DialogTitle>
           </div>
           <DialogDescription className="text-sm text-[#8b949e] text-left">
-            {isForgotPassword
-              ? "Enter your email address and we'll send you a link to reset your password."
-              : `${activeTab === "login" ? "Sign in" : "Sign up"} to start evaluating GitHub repositories`}
+            <motion.span
+              key={
+                isForgotPassword
+                  ? "forgot-desc"
+                  : activeTab === "login"
+                    ? "login-desc"
+                    : "register-desc"
+              }
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease }}
+              className="inline-block"
+            >
+              {isForgotPassword
+                ? "Enter your email address and we'll send you a link to reset your password."
+                : `${activeTab === "login" ? "Sign in" : "Sign up"} to start evaluating GitHub repositories`}
+            </motion.span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-4 sm:p-6 pt-2 sm:pt-4">
           {isForgotPassword ? (
             /* FORGOT PASSWORD VIEW */
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div className="space-y-2">
+            <motion.div
+              className="space-y-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.form
+                onSubmit={handleForgotPassword}
+                className="space-y-4"
+                variants={containerVariants}
+              >
+                <motion.div className="space-y-2" variants={itemVariants}>
                   <Label
                     htmlFor="forgot-email"
                     className="text-[#c9d1d9] text-sm"
@@ -170,15 +236,17 @@ export function AuthDialog({
                     required
                     className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                   />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
-                >
-                  Send reset link
-                </Button>
-              </form>
-              <div className="text-center pt-2">
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
+                  >
+                    Send reset link
+                  </Button>
+                </motion.div>
+              </motion.form>
+              <motion.div className="text-center pt-2" variants={itemVariants}>
                 <button
                   type="button"
                   onClick={() => setIsForgotPassword(false)}
@@ -187,8 +255,8 @@ export function AuthDialog({
                   <ArrowLeft className="w-3 h-3 mr-1" />
                   Back to Sign In
                 </button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           ) : (
             /* TABS VIEW */
             <Tabs
@@ -213,137 +281,171 @@ export function AuthDialog({
 
               {/* LOGIN TAB */}
               <TabsContent value="login" className="mt-0">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="login-email"
-                      className="text-[#c9d1d9] text-sm"
-                    >
-                      Email address
-                    </Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                      className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <motion.form
+                    onSubmit={handleLogin}
+                    className="space-y-4"
+                    variants={containerVariants}
+                  >
+                    <motion.div className="space-y-2" variants={itemVariants}>
                       <Label
-                        htmlFor="login-password"
+                        htmlFor="login-email"
                         className="text-[#c9d1d9] text-sm"
                       >
-                        Password
+                        Email address
                       </Label>
-                      <button
-                        type="button"
-                        onClick={() => setIsForgotPassword(true)}
-                        className="text-xs text-[#58a6ff] hover:underline"
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                      />
+                    </motion.div>
+                    <motion.div className="space-y-2" variants={itemVariants}>
+                      <div className="flex justify-between items-center">
+                        <Label
+                          htmlFor="login-password"
+                          className="text-[#c9d1d9] text-sm"
+                        >
+                          Password
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-xs text-[#58a6ff] hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                      />
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <Button
+                        type="submit"
+                        className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 pt-2"
                       >
-                        Forgot password?
-                      </button>
-                    </div>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                      className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 pt-2"
-                  >
-                    Sign in
-                  </Button>
-                </form>
+                        Sign in
+                      </Button>
+                    </motion.div>
+                  </motion.form>
 
-                <SocialAuthButtons />
+                  <motion.div variants={itemVariants}>
+                    <SocialAuthButtons />
+                  </motion.div>
+                </motion.div>
               </TabsContent>
 
               {/* REGISTER TAB */}
               <TabsContent value="register" className="mt-0">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="register-name"
-                      className="text-[#c9d1d9] text-sm"
-                    >
-                      Full name
-                    </Label>
-                    <Input
-                      id="register-name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={registerName}
-                      onChange={(e) => setRegisterName(e.target.value)}
-                      required
-                      className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="register-email"
-                      className="text-[#c9d1d9] text-sm"
-                    >
-                      Email address
-                    </Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      required
-                      className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="register-password"
-                      className="text-[#c9d1d9] text-sm"
-                    >
-                      Password
-                    </Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="Create a password"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      required
-                      className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <motion.form
+                    onSubmit={handleRegister}
+                    className="space-y-4"
+                    variants={containerVariants}
                   >
-                    Create account
-                  </Button>
-                  <p className="text-[10px] sm:text-xs text-center text-[#8b949e] mt-2">
-                    By creating an account, you agree to our{" "}
-                    <a href="#terms" className="text-[#58a6ff] hover:underline">
-                      Terms
-                    </a>{" "}
-                    and{" "}
-                    <a
-                      href="#privacy"
-                      className="text-[#58a6ff] hover:underline"
+                    <motion.div className="space-y-2" variants={itemVariants}>
+                      <Label
+                        htmlFor="register-name"
+                        className="text-[#c9d1d9] text-sm"
+                      >
+                        Full name
+                      </Label>
+                      <Input
+                        id="register-name"
+                        type="text"
+                        placeholder="John Doe"
+                        value={registerName}
+                        onChange={(e) => setRegisterName(e.target.value)}
+                        required
+                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                      />
+                    </motion.div>
+                    <motion.div className="space-y-2" variants={itemVariants}>
+                      <Label
+                        htmlFor="register-email"
+                        className="text-[#c9d1d9] text-sm"
+                      >
+                        Email address
+                      </Label>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        required
+                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                      />
+                    </motion.div>
+                    <motion.div className="space-y-2" variants={itemVariants}>
+                      <Label
+                        htmlFor="register-password"
+                        className="text-[#c9d1d9] text-sm"
+                      >
+                        Password
+                      </Label>
+                      <Input
+                        id="register-password"
+                        type="password"
+                        placeholder="Create a password"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        required
+                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                      />
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <Button
+                        type="submit"
+                        className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
+                      >
+                        Create account
+                      </Button>
+                    </motion.div>
+                    <motion.p
+                      className="text-[10px] sm:text-xs text-center text-[#8b949e] mt-2"
+                      variants={itemVariants}
                     >
-                      Privacy Policy
-                    </a>
-                  </p>
-                </form>
+                      By creating an account, you agree to our{" "}
+                      <a
+                        href="#terms"
+                        className="text-[#58a6ff] hover:underline"
+                      >
+                        Terms
+                      </a>{" "}
+                      and{" "}
+                      <a
+                        href="#privacy"
+                        className="text-[#58a6ff] hover:underline"
+                      >
+                        Privacy Policy
+                      </a>
+                    </motion.p>
+                  </motion.form>
 
-                <SocialAuthButtons />
+                  <motion.div variants={itemVariants}>
+                    <SocialAuthButtons />
+                  </motion.div>
+                </motion.div>
               </TabsContent>
             </Tabs>
           )}
