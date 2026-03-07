@@ -128,7 +128,7 @@ npm run lint
 
 ## Contributing
 
-See [CONTRIBUTION.md](../../CONTRIBUTION.md).
+See [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Security
 
