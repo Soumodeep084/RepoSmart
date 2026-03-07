@@ -1,15 +1,34 @@
-import { Button } from "../ui/button";
+"use client";
+
+import { useSyncExternalStore } from "react";
+import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 
+import { Button } from "../ui/button";
+import { clearAuth, getAuthToken, subscribeAuth } from "../../lib/auth";
+
 interface HeaderProps {
-  onLogin: () => void;
-  onRegister: () => void;
+  onLogin?: () => void;
+  onRegister?: () => void;
 }
 
 export function Header({ onLogin, onRegister }: HeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const token = useSyncExternalStore(subscribeAuth, getAuthToken, () => null);
+
   const shouldReduceMotion = useReducedMotion();
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+  const isAuthed = Boolean(token);
+  const isAnalyzePage = pathname === "/analyze";
+
+  const handleSignOut = () => {
+    clearAuth();
+    router.push("/");
+  };
 
   const motionProps = shouldReduceMotion
     ? ({
@@ -35,19 +54,24 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative">
               <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
-                <Image
-                  src="/images/Hero_Image.png"
-                  alt={"RepoSmart Logo"}
-                  width={40}
-                  height={20}
-                  className="w-full h-full object-contain"
-                />
+                <Link href="/" aria-label="RepoSmart home">
+                  <Image
+                    src="/images/Hero_Image.png"
+                    alt={"RepoSmart Logo"}
+                    width={40}
+                    height={20}
+                    className="w-full h-full object-contain"
+                  />
+                </Link>
               </div>
             </div>
             <div className="flex items-center">
-              <span className="rs-text-glow font-bold text-lg sm:text-xl text-white">
+              <Link
+                href="/"
+                className="rs-text-glow font-bold text-lg sm:text-xl text-white"
+              >
                 RepoSmart
-              </span>
+              </Link>
               <span className="ml-2 text-[10px] sm:text-xs text-[#8b949e] border border-[#30363d] px-2 py-0.5 rounded-full hidden xs:inline-block">
                 Beta
               </span>
@@ -56,35 +80,75 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="#features"
-              className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-            >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-            >
-              How it Works
-            </a>
+            {isAuthed ? (
+              <>
+                <Link
+                  href="/"
+                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/analyze"
+                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                  aria-current={isAnalyzePage ? "page" : undefined}
+                >
+                  Analyzer
+                </Link>
+              </>
+            ) : (
+              <>
+                <a
+                  href="#features"
+                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                >
+                  How it Works
+                </a>
+              </>
+            )}
           </nav>
 
           {/* Auth Buttons - adjusted gap and padding for mobile */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              variant="ghost"
-              onClick={onLogin}
-              className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
-            >
-              Sign in
-            </Button>
-            <Button
-              onClick={onRegister}
-              className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
-            >
-              Sign up
-            </Button>
+            {isAuthed ? (
+              <>
+                <Button
+                  asChild
+                  className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
+                >
+                  <Link href="/analyze">Analyze</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
+                >
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={onLogin}
+                  className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
+                >
+                  Sign in
+                </Button>
+                <Button
+                  onClick={onRegister}
+                  className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
+                >
+                  Sign up
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

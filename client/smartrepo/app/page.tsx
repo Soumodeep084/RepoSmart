@@ -1,5 +1,6 @@
 "use client"
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Header } from '../components/homepage/Header';
 import { Hero } from '../components/homepage/Hero';
@@ -11,6 +12,7 @@ import { Footer } from '../components/homepage/Footer';
 import { AuthDialog } from '../components/homepage/AuthDialog';
 
 export default function App() {
+  const router = useRouter();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState<'login' | 'register'>('login');
 
@@ -75,6 +77,7 @@ export default function App() {
         open={authDialogOpen} 
         onOpenChange={setAuthDialogOpen}
         defaultTab={authDialogTab}
+        onAuthenticated={() => router.push('/analyze')}
       />
     </div>
   );
