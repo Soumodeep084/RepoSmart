@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RepoSmart
 
-## Getting Started
+RepoSmart is a full-stack app that analyzes GitHub repositories and generates a score, a short summary, and a prioritized improvement roadmap.
 
-First, run the development server:
+- Frontend: Next.js App Router (`client/smartrepo`)
+- Backend: Express + MongoDB (`server`)
+
+## Features
+
+- Email/password registration & login (JWT)
+- Analyze public GitHub repos by URL (or `owner/repo` shorthand)
+- Score breakdown + “what to improve next” roadmap
+
+## Prerequisites
+
+- Node.js 18+ (server uses native `fetch`)
+- npm
+- A MongoDB connection string (MongoDB Atlas works fine)
+
+## Quickstart (local dev)
+
+### 1) Start the API server
+
+From the repo root:
+
+```bash
+cd server
+npm install
+```
+
+Create `server/.env` (see the template below), then:
+
+```bash
+npm start
+```
+
+Server runs at `http://localhost:5000` by default.
+
+### 2) Start the web app
+
+In a new terminal (from the repo root):
+
+```bash
+cd client/smartrepo
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Configuration
+
+### Backend env (`server/.env`)
+
+RepoSmart loads environment variables from `server/.env`.
+
+```bash
+# Server
+PORT=5000
+
+# Database
+MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>/<db>
+
+# Auth
+JWT_SECRET=replace-with-a-long-random-secret
+
+# GitHub API
+GITHUB_API_BASE=https://api.github.com
+GITHUB_API_VERSION=2022-11-28
+
+# Optional: increases GitHub API rate limits
+GITHUB_TOKEN=github_pat_or_ghp_token_here
+```
+
+Important:
+
+- Never commit real secrets (tokens/passwords) to git.
+- If you ever exposed a token, rotate it immediately.
+
+### Frontend env (optional)
+
+The frontend defaults to `http://localhost:5000` for API calls. To override (deployments, different port), set:
+
+Create `client/smartrepo/.env.local`:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+## API
+
+Base URL: `http://localhost:5000`
+
+- `POST /api/auth/register`
+	- Body: `{ "username": string, "email": string, "password": string }`
+	- Returns: `{ id, username, email, token }`
+- `POST /api/auth/login`
+	- Body: `{ "email": string, "password": string }`
+	- Returns: `{ id, username, email, token }`
+- `POST /api/repo/analyze`
+	- Auth: `Authorization: Bearer <token>`
+	- Body: `{ "url": "https://github.com/owner/repo" }`
+	- Returns: repository snapshot + score + roadmap
+
+## Scripts
+
+### Frontend (`client/smartrepo`)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Backend (`server`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm start
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+- `client/smartrepo/` — Next.js UI
+- `server/` — Express API + MongoDB auth + GitHub analysis logic
+- `tests/` — manual test notes
 
-To learn more about Next.js, take a look at the following resources:
+## Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See [CONTRIBUTION.md](../../CONTRIBUTION.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security
 
-## Deploy on Vercel
+See [SECURITY.md](../../SECURITY.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [LICENSE](../../LICENSE).
