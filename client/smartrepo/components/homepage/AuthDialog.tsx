@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Dialog,
@@ -14,6 +14,48 @@ import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Github, ArrowLeft } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+
+type AuthApiResponse = {
+  id: string;
+  username: string;
+  email: string;
+  token: string;
+};
+
+function getApiBaseUrl() {
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+}
+
+function buildApiUrl(path: string) {
+  const base = getApiBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return new URL(normalizedPath, base).toString();
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(buildApiUrl(path), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message =
+      data &&
+      typeof data === "object" &&
+      "message" in data &&
+      typeof (data as { message?: unknown }).message === "string"
+        ? (data as { message: string }).message
+        : `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  return data as T;
+}
 
 // Custom Google SVG Icon
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -91,6 +133,11 @@ export function AuthDialog({
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
   const shouldReduceMotion = useReducedMotion();
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -128,23 +175,71 @@ export function AuthDialog({
   // Form States
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [registerName, setRegisterName] = useState("");
+  const [registerUsername, setRegisterUsername] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Login:", { email: loginEmail, password: loginPassword });
+  const storageKeys = useMemo(
+    () => ({ token: "reposmart_token", user: "reposmart_user" }),
+    [],
+  );
+
+  const persistAuth = (payload: AuthApiResponse) => {
+    localStorage.setItem(storageKeys.token, payload.token);
+    localStorage.setItem(
+      storageKeys.user,
+      JSON.stringify({
+        id: payload.id,
+        username: payload.username,
+        email: payload.email,
+      }),
+    );
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register:", {
-      name: registerName,
-      email: registerEmail,
-      password: registerPassword,
-    });
+    if (loginSubmitting) return;
+
+    setLoginError(null);
+    setLoginSubmitting(true);
+
+    try {
+      const payload = await postJson<AuthApiResponse>("/api/auth/login", {
+        email: loginEmail.trim().toLowerCase(),
+        password: loginPassword,
+      });
+      persistAuth(payload);
+      handleOpenChange(false);
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "Unable to sign in.");
+    } finally {
+      setLoginSubmitting(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (registerSubmitting) return;
+
+    setRegisterError(null);
+    setRegisterSubmitting(true);
+
+    try {
+      const payload = await postJson<AuthApiResponse>("/api/auth/register", {
+        username: registerUsername.trim(),
+        email: registerEmail.trim().toLowerCase(),
+        password: registerPassword,
+      });
+      persistAuth(payload);
+      handleOpenChange(false);
+    } catch (err) {
+      setRegisterError(
+        err instanceof Error ? err.message : "Unable to create account.",
+      );
+    } finally {
+      setRegisterSubmitting(false);
+    }
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
@@ -153,11 +248,26 @@ export function AuthDialog({
     // Add toast notification here later!
   };
 
+  // Ensure the tab matches the button that opened the dialog
+  useEffect(() => {
+    if (!open) return;
+    setActiveTab(defaultTab);
+    setIsForgotPassword(false);
+    setLoginError(null);
+    setRegisterError(null);
+  }, [open, defaultTab]);
+
   // Reset internal view state when dialog closes so it opens fresh next time
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       // Small delay prevents UI jarring while the dialog animates out
       setTimeout(() => setIsForgotPassword(false), 200);
+      setLoginError(null);
+      setRegisterError(null);
+      setLoginSubmitting(false);
+      setRegisterSubmitting(false);
+      setLoginPassword("");
+      setRegisterPassword("");
     }
     onOpenChange(isOpen);
   };
@@ -305,6 +415,7 @@ export function AuthDialog({
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         required
+                        disabled={loginSubmitting}
                         className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
@@ -331,17 +442,27 @@ export function AuthDialog({
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         required
+                        disabled={loginSubmitting}
                         className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
                       <Button
                         type="submit"
+                        disabled={loginSubmitting}
                         className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 pt-2"
                       >
                         Sign in
                       </Button>
                     </motion.div>
+                    {loginError ? (
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-xs text-red-400"
+                      >
+                        {loginError}
+                      </motion.p>
+                    ) : null}
                   </motion.form>
 
                   <motion.div variants={itemVariants}>
@@ -364,18 +485,19 @@ export function AuthDialog({
                   >
                     <motion.div className="space-y-2" variants={itemVariants}>
                       <Label
-                        htmlFor="register-name"
+                        htmlFor="register-username"
                         className="text-[#c9d1d9] text-sm"
                       >
-                        Full name
+                        Username
                       </Label>
                       <Input
-                        id="register-name"
+                        id="register-username"
                         type="text"
-                        placeholder="John Doe"
-                        value={registerName}
-                        onChange={(e) => setRegisterName(e.target.value)}
+                        placeholder="octocat"
+                        value={registerUsername}
+                        onChange={(e) => setRegisterUsername(e.target.value)}
                         required
+                        disabled={registerSubmitting}
                         className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
@@ -393,6 +515,7 @@ export function AuthDialog({
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
                         required
+                        disabled={registerSubmitting}
                         className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
@@ -410,17 +533,27 @@ export function AuthDialog({
                         value={registerPassword}
                         onChange={(e) => setRegisterPassword(e.target.value)}
                         required
+                        disabled={registerSubmitting}
                         className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
                       <Button
                         type="submit"
+                        disabled={registerSubmitting}
                         className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
                       >
                         Create account
                       </Button>
                     </motion.div>
+                    {registerError ? (
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-xs text-red-400"
+                      >
+                        {registerError}
+                      </motion.p>
+                    ) : null}
                     <motion.p
                       className="text-[10px] sm:text-xs text-center text-[#8b949e] mt-2"
                       variants={itemVariants}

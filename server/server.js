@@ -1,9 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
-dotenv.config();
+// Load env vars from server/.env only (do not use .env.local)
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 app.use(cors());
 app.use(express.json());
@@ -17,7 +19,13 @@ app.get('/',(req,res)=>{
 
 const connectDB = require("./config/db")
 const PORT = process.env.PORT || 3000;
-connectDB();
-app.listen(PORT,()=>{
-    console.log(`Server is listening at ${PORT}`);
-})
+
+connectDB()
+    .then(() => {
+        app.listen(PORT,()=>{
+            console.log(`Server is listening at ${PORT}`);
+        })
+    })
+    .catch(() => {
+        process.exit(1);
+    });

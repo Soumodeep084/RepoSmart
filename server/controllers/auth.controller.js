@@ -38,6 +38,12 @@ exports.register = async (req,res) => {
         })
 
     }catch(err){
+        if (err && err.code === 11000) {
+            const keyValue = err.keyValue && typeof err.keyValue === "object" ? err.keyValue : null;
+            const field = keyValue ? Object.keys(keyValue)[0] : null;
+            const message = field ? `${field} already exists` : "User already exists";
+            return res.status(400).json({ message });
+        }
         console.error("Register error:", err);
         res.status(500).json({
             message: err.message,
