@@ -1,7 +1,6 @@
 "use client";
 import { Github, ArrowRight, CheckCircle2, Star, GitFork } from "lucide-react";
 import { Button } from "../ui/button";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useEffect, useState } from "react";
 
 interface HeroProps {
@@ -19,7 +18,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-[#0d1117] pt-20 pb-32 sm:px-14">
+    <section className="relative overflow-hidden bg-background pt-20 pb-32 sm:px-14">
       {/* Animated Grid Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div
@@ -46,7 +45,10 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
           {/* Left Content */}
           <div className="space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#161b22] border border-[#30363d] text-sm">
+            <div
+              className="rs-glow inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-1 border border-[#30363d] text-sm"
+              style={{ "--rs-glow-color": "#58a6ff" }}
+            >
               <Github className="w-4 h-4 text-[#58a6ff]" />
               <span className="text-[#c9d1d9]">Powered by GitHub API</span>
             </div>
@@ -54,7 +56,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
             {/* Heading */}
             <div className="space-y-4">
               {/* Made text responsive: text-4xl on mobile, text-5xl on sm, text-6xl on lg */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight wrap-break-word">
+              <h1 className="rs-text-glow text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight wrap-break-word">
                 Evaluate GitHub
                 <br />
                 <span className="bg-linear-to-r from-[#58a6ff] to-[#79c0ff] bg-clip-text text-transparent">
@@ -73,7 +75,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
               <Button
                 size="lg"
                 onClick={onRegister}
-                className="bg-[#238636] hover:bg-[#2ea043] text-white border-0 shadow-lg shadow-[#238636]/30 group w-full sm:w-auto"
+                className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/30 group w-full sm:w-auto"
               >
                 Get started for free
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -82,7 +84,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
                 size="lg"
                 variant="outline"
                 onClick={onLogin}
-                className="border-[#30363d] bg-[#21262d] text-white hover:bg-[#30363d] hover:border-[#58a6ff] w-full sm:w-auto"
+                className="border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff] w-full sm:w-auto"
               >
                 View demo
               </Button>
@@ -114,18 +116,25 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
           >
             
             <div className="relative rounded-lg overflow-hidden border border-[#30363d] shadow-2xl">
-              <ImageWithFallback
-                src="/images/hero.png"
-                alt="GitHub coding"
-                className="w-full h-auto"
-                width={1400}
-                height={1400}
-              />
-              <div className="absolute inset-0 bg-linear-to-t from-[#0d1117] via-transparent to-transparent" />
+              <video
+                className="block w-full h-auto"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-label="SmartRepo hero video"
+              >
+                <source
+                  src="/videos/kling_20260307_作品_Create_a_1_4532_0.mp4"
+                  type="video/mp4"
+                />
+              </video>
+              <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-transparent" />
             </div>
 
             {/* Floating Cards - Adjusted positions for mobile to prevent clipping */}
-            <div className="absolute left-0 sm:-left-6 top-1/4 bg-[#161b22] border border-[#30363d] rounded-lg p-3 sm:p-4 shadow-xl backdrop-blur-xl animate-float scale-90 sm:scale-100 origin-left">
+            <div className="absolute left-0 sm:-left-6 top-1/4 bg-surface-1 border border-[#30363d] rounded-lg p-3 sm:p-4 shadow-xl backdrop-blur-xl animate-float scale-90 sm:scale-100 origin-left">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#238636]/20 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#3fb950]" />
@@ -141,7 +150,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
               </div>
             </div>
 
-            <div className="absolute right-0 sm:-right-6 top-1/3 bg-[#161b22] border border-[#30363d] rounded-lg p-3 sm:p-4 shadow-xl backdrop-blur-xl animate-float animation-delay-2000 scale-90 sm:scale-100 origin-right">
+            <div className="absolute right-0 sm:-right-6 top-1/3 bg-surface-1 border border-[#30363d] rounded-lg p-3 sm:p-4 shadow-xl backdrop-blur-xl animate-float animation-delay-2000 scale-90 sm:scale-100 origin-right">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-[#58a6ff] to-[#79c0ff] bg-clip-text text-transparent">
                   95
@@ -152,7 +161,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
               </div>
             </div>
 
-            <div className="absolute left-1/4 -bottom-4 sm:-bottom-6 bg-[#161b22] border border-[#30363d] rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-xl backdrop-blur-xl animate-float animation-delay-4000 scale-90 sm:scale-100">
+            <div className="absolute left-1/4 -bottom-4 sm:-bottom-6 bg-surface-1 border border-[#30363d] rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-xl backdrop-blur-xl animate-float animation-delay-4000 scale-90 sm:scale-100">
               <div className="flex items-center gap-2 sm:gap-3">
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 text-[#f0883e] fill-[#f0883e]" />
                 <span className="text-xs sm:text-sm font-semibold text-white">

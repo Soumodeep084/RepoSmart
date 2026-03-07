@@ -91,7 +91,7 @@ const SocialAuthButtons = () => (
         <div className="w-full border-t border-[#30363d]"></div>
       </div>
       <div className="relative flex justify-center text-xs sm:text-sm">
-        <span className="px-2 bg-[#161b22] text-[#8b949e]">
+        <span className="px-2 bg-surface-1 text-[#8b949e]">
           Or continue with
         </span>
       </div>
@@ -101,7 +101,7 @@ const SocialAuthButtons = () => (
       <Button
         variant="outline"
         type="button"
-        className="w-full border-[#30363d] bg-[#21262d] text-white hover:bg-[#30363d] hover:border-[#58a6ff]"
+        className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
       >
         <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
         Google
@@ -109,7 +109,7 @@ const SocialAuthButtons = () => (
       <Button
         variant="outline"
         type="button"
-        className="w-full border-[#30363d] bg-[#21262d] text-white hover:bg-[#30363d] hover:border-[#58a6ff]"
+        className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
       >
         <Github className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
         GitHub
@@ -274,11 +274,11 @@ export function AuthDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[95vw] sm:max-w-md bg-[#161b22] border border-[#30363d] text-white p-0 rounded-xl overflow-hidden">
+      <DialogContent className="w-[95vw] sm:max-w-md bg-surface-1 border border-[#30363d] text-white p-0 rounded-xl overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-0">
           <div className="flex items-center gap-3 mb-2 sm:mb-3">
             <ImageWithFallback
-              src="/images/heroLogo.png"
+              src="/images/Hero_Image.png"
               alt="RepoSmart Logo"
               width={40}
               height={40}
@@ -344,19 +344,19 @@ export function AuthDialog({
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
-                    className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                    className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                   />
                 </motion.div>
                 <motion.div variants={itemVariants}>
                   <Button
                     type="submit"
-                    className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
+                    className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
                   >
                     Send reset link
                   </Button>
                 </motion.div>
               </motion.form>
-              <motion.div className="text-center pt-2" variants={itemVariants}>
+              <motion.div variants={itemVariants}>
                 <button
                   type="button"
                   onClick={() => setIsForgotPassword(false)}
@@ -374,16 +374,16 @@ export function AuthDialog({
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 bg-[#0d1117] p-1 h-auto rounded-lg mb-4">
+              <TabsList className="grid w-full grid-cols-2 bg-background p-1 h-auto rounded-lg mb-4">
                 <TabsTrigger
                   value="login"
-                  className="data-[state=active]:bg-[#21262d] data-[state=active]:text-white text-[#8b949e] rounded py-2 text-sm"
+                  className="data-[state=active]:bg-surface-2 data-[state=active]:text-white text-[#8b949e] rounded py-2 text-sm"
                 >
                   Sign in
                 </TabsTrigger>
                 <TabsTrigger
                   value="register"
-                  className="data-[state=active]:bg-[#21262d] data-[state=active]:text-white text-[#8b949e] rounded py-2 text-sm"
+                  className="data-[state=active]:bg-surface-2 data-[state=active]:text-white text-[#8b949e] rounded py-2 text-sm"
                 >
                   Sign up
                 </TabsTrigger>
@@ -416,7 +416,7 @@ export function AuthDialog({
                         onChange={(e) => setLoginEmail(e.target.value)}
                         required
                         disabled={loginSubmitting}
-                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                        className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div className="space-y-2" variants={itemVariants}>
@@ -443,14 +443,14 @@ export function AuthDialog({
                         onChange={(e) => setLoginPassword(e.target.value)}
                         required
                         disabled={loginSubmitting}
-                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                        className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
                       <Button
                         type="submit"
                         disabled={loginSubmitting}
-                        className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 pt-2"
+                        className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 pt-2 shadow-lg shadow-[#1f6feb]/20"
                       >
                         Sign in
                       </Button>
@@ -498,7 +498,7 @@ export function AuthDialog({
                         onChange={(e) => setRegisterUsername(e.target.value)}
                         required
                         disabled={registerSubmitting}
-                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                        className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div className="space-y-2" variants={itemVariants}>
@@ -516,7 +516,7 @@ export function AuthDialog({
                         onChange={(e) => setRegisterEmail(e.target.value)}
                         required
                         disabled={registerSubmitting}
-                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                        className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div className="space-y-2" variants={itemVariants}>
@@ -534,14 +534,14 @@ export function AuthDialog({
                         onChange={(e) => setRegisterPassword(e.target.value)}
                         required
                         disabled={registerSubmitting}
-                        className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                        className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
                       <Button
                         type="submit"
                         disabled={registerSubmitting}
-                        className="w-full bg-[#238636] hover:bg-[#2ea043] text-white border-0 mt-2"
+                        className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
                       >
                         Create account
                       </Button>

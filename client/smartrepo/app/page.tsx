@@ -42,7 +42,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117]">
+    <div className="min-h-screen bg-background">
       <Header onLogin={handleLogin} onRegister={handleRegister}/>
       
       <main>

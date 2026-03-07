@@ -47,7 +47,7 @@ export function FeaturesSection() {
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-[#161b22] relative overflow-hidden">
+    <section className="py-16 sm:py-24 bg-surface-1 relative overflow-hidden">
       {/* Parallax background elements */}
       <div
         className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#1f6feb] rounded-full mix-blend-multiply filter blur-3xl opacity-5"
@@ -56,7 +56,7 @@ export function FeaturesSection() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-14 relative z-10">
         <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
+          <h2 className="rs-text-glow text-3xl sm:text-4xl font-bold mb-4 text-white">
             Comprehensive Repository Analysis
           </h2>
           <p className="text-base sm:text-lg text-[#8b949e] max-w-3xl mx-auto">
@@ -69,7 +69,7 @@ export function FeaturesSection() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative bg-[#0d1117] border border-[#30363d] rounded-lg overflow-hidden hover:border-[#58a6ff] transition-all duration-300"
+              className="group relative bg-background border border-[#30363d] rounded-lg overflow-hidden hover:border-[#58a6ff] transition-all duration-300"
             >
               <div className="relative h-40 sm:h-44 overflow-hidden">
                 <ImageWithFallback
@@ -87,10 +87,11 @@ export function FeaturesSection() {
                 />
                 <div className="absolute top-4 left-4">
                   <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg backdrop-blur-xl border flex items-center justify-center"
+                    className="rs-glow w-10 h-10 sm:w-12 sm:h-12 rounded-lg backdrop-blur-xl border flex items-center justify-center"
                     style={{
                       backgroundColor: `${feature.color}20`,
                       borderColor: `${feature.color}40`,
+                      "--rs-glow-color": feature.color,
                     }}
                   >
                     <feature.icon

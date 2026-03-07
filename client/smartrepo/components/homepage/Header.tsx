@@ -26,7 +26,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
   return (
     <motion.header
       {...motionProps}
-      className="sticky top-0 z-50 w-full border-b border-[#30363d] bg-[#0d1117]/95 backdrop-blur-md"
+      className="sticky top-0 z-50 w-full border-b border-[#30363d] bg-background/95 backdrop-blur-md"
     >
       {/* Adjusted padding for mobile */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-10">
@@ -36,7 +36,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             <div className="relative">
               <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
                 <Image
-                  src={"/images/heroLogo.png"}
+                  src="/images/Hero_Image.png"
                   alt={"RepoSmart Logo"}
                   width={40}
                   height={20}
@@ -45,7 +45,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
               </div>
             </div>
             <div className="flex items-center">
-              <span className="font-bold text-lg sm:text-xl text-white">
+              <span className="rs-text-glow font-bold text-lg sm:text-xl text-white">
                 RepoSmart
               </span>
               <span className="ml-2 text-[10px] sm:text-xs text-[#8b949e] border border-[#30363d] px-2 py-0.5 rounded-full hidden xs:inline-block">
@@ -75,13 +75,13 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             <Button
               variant="ghost"
               onClick={onLogin}
-              className="text-[#c9d1d9] hover:text-white hover:bg-[#21262d] border-0 px-2 sm:px-4 text-sm"
+              className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
             >
               Sign in
             </Button>
             <Button
               onClick={onRegister}
-              className="bg-[#238636] hover:bg-[#2ea043] text-white border-0 shadow-lg shadow-[#238636]/20 px-3 sm:px-4 text-sm"
+              className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
             >
               Sign up
             </Button>

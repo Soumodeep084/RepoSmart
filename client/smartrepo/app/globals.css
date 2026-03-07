@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0d1117;
+  /* Base theme: blackish-blue */
+  --background: #0b1220;
   --foreground: #e6edf3;
+
+  /* Surface tokens (replace grey backgrounds with blue-tinted surfaces) */
+  --surface-1: #0e1a2b;
+  --surface-2: #111f33;
+  --surface-3: #162946;
 }
 
 *, *::before, *::after {
@@ -17,14 +23,51 @@ html, body {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Keep the same blackish-blue palette in dark mode */
+    --background: #0b1220;
+    --foreground: #e6edf3;
+  }
+}
+
+@layer utilities {
+  /* Theme-colored glow behind colored blocks.
+     Usage: add class "rs-glow" and set --rs-glow-color via inline style.
+     Example: style={{ ['--rs-glow-color' as any]: '#58a6ff' }} */
+  .rs-glow {
+    position: relative;
+    z-index: 0;
+  }
+
+  .rs-glow::before {
+    content: "";
+    position: absolute;
+    inset: -18px;
+    border-radius: inherit;
+    background: radial-gradient(
+      circle at 50% 50%,
+      var(--rs-glow-color, rgba(88, 166, 255, 0.45)) 0%,
+      transparent 70%
+    );
+    filter: blur(18px);
+    opacity: var(--rs-glow-opacity, 0.35);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Subtle bluish glow for headings/key text */
+  .rs-text-glow {
+    text-shadow:
+      0 0 18px rgba(88, 166, 255, 0.25),
+      0 0 32px rgba(88, 166, 255, 0.12);
   }
 }
 

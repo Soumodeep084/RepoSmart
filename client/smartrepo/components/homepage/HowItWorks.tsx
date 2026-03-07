@@ -33,10 +33,10 @@ export function HowItWorks() {
   ];
 
   return (
-    <section className="py-16 sm:py-20 bg-[#161b22]">
+    <section className="py-16 sm:py-20 bg-surface-1">
       <div className="container mx-auto px-4 sm:px-6 lg:px-10">
         <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
+          <h2 className="rs-text-glow text-3xl sm:text-4xl font-bold mb-4 text-white">
             How It Works
           </h2>
           <p className="text-base sm:text-lg text-[#8b949e] max-w-2xl mx-auto">
@@ -49,7 +49,7 @@ export function HowItWorks() {
             <div key={index} className="relative">
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-linear-to-r from-[#30363d] to-[#30363d]">
+                <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-linear-to-r from-surface-3 to-surface-3">
                   <div
                     className="absolute inset-0 bg-linear-to-r from-[#58a6ff] to-transparent animate-pulse"
                     style={{ width: "50%" }}
@@ -60,12 +60,15 @@ export function HowItWorks() {
               <div className="relative flex flex-col items-center text-center">
                 {/* Icon Container */}
                 <div className="relative mb-5 sm:mb-6">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#0d1117] border-2 border-[#30363d] flex items-center justify-center group-hover:border-[#58a6ff] transition-all">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-background border-2 border-[#30363d] flex items-center justify-center group-hover:border-[#58a6ff] transition-all">
                     <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-[#58a6ff]" />
                   </div>
 
                   {/* Step Number */}
-                  <div className="absolute -top-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#58a6ff] text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg">
+                  <div
+                    className="rs-glow absolute -top-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#58a6ff] text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg"
+                    style={{ "--rs-glow-color": "#58a6ff" }}
+                  >
                     {step.step}
                   </div>
                 </div>
