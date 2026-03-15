@@ -3,7 +3,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function Footer() {
   return (
-    <footer className="bg-surface-1 text-[#8b949e] pt-8 sm:pt-12 pb-8 border-t border-[#30363d]">
+    <footer className="bg-surface-1 text-[#8b949e] pt-8 px-3 sm:pt-12 pb-8 border-t border-[#30363d]">
       <div className="container mx-auto px-0 sm:px-4 ">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 sm:gap-12 mb-12">
           {/* Brand */}

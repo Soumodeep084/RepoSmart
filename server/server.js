@@ -7,6 +7,7 @@ const app = express();
 // Load env vars from server/.env only (do not use .env.local)
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+
 app.use(cors());
 app.use(express.json());
 
