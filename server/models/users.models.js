@@ -16,16 +16,18 @@ const userSchema = mongoose.Schema(
         },
         password: {
             type: String,
-            required: true
+            required: false
         },
         googleId: {
             type: String,
             unique: true,
+            sparse: true, // allows multiple null values
             required: false,
         },
         githubId: {
             type: String,
             unique: true,
+            sparse: true, // allows multiple null values
             required: false,
         }
     },
