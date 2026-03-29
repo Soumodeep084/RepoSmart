@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
+import { useGoogleAuth } from "@/services/googleAuth";
 
 // Custom Google SVG Icon
 export const GoogleIcon = ({ className }: { className?: string }) => (
@@ -28,36 +31,44 @@ export const GoogleIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const SocialAuthButtons = () => (
-  <>
-    <div className="relative my-6">
-      <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-[#30363d]"></div>
-      </div>
-      <div className="relative flex justify-center text-xs sm:text-sm">
-        <span className="px-2 bg-surface-1 text-[#8b949e]">
-          Or continue with
-        </span>
-      </div>
-    </div>
+export const SocialAuthButtons = () => {
+  const { login } = useGoogleAuth();
 
-    <div className="grid grid-cols-2 gap-3">
-      <Button
-        variant="outline"
-        type="button"
-        className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
-      >
-        <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-        Google
-      </Button>
-      <Button
-        variant="outline"
-        type="button"
-        className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
-      >
-        <Github className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-        GitHub
-      </Button>
-    </div>
-  </>
-);
+  return (
+    <>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#30363d]"></div>
+        </div>
+        <div className="relative flex justify-center text-xs sm:text-sm">
+          <span className="px-2 bg-surface-1 text-[#8b949e]">
+            Or continue with
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {/* GOOGLE BUTTON */}
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => login()}
+          className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
+        >
+          <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+          Google
+        </Button>
+
+        {/* GITHUB BUTTON (future use) */}
+        <Button
+          variant="outline"
+          type="button"
+          className="w-full border-[#30363d] bg-surface-2 text-white hover:bg-surface-3 hover:border-[#58a6ff]"
+        >
+          <Github className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+          GitHub
+        </Button>
+      </div>
+    </>
+  );
+};
