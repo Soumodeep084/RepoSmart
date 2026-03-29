@@ -62,13 +62,18 @@ export async function postJson<T>(path: string, body: unknown, options: PostJson
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
+    // const message =
+    //   data &&
+    //   typeof data === "object" &&
+    //   "message" in data &&
+    //   typeof (data as { message?: unknown }).message === "string"
+    //     ? (data as { message: string }).message
+    //     : `Request failed (${res.status})`;
+
     const message =
-      data &&
-      typeof data === "object" &&
-      "message" in data &&
-      typeof (data as { message?: unknown }).message === "string"
-        ? (data as { message: string }).message
-        : `Request failed (${res.status})`;
+      data?.message ||
+      data?.error ||
+      `Request failed (${res.status})`;
 
     throw new Error(message);
   }

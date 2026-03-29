@@ -29,7 +29,16 @@ const userSchema = mongoose.Schema(
             unique: true,
             sparse: true, // allows multiple null values
             required: false,
+        },
+        resetOtp:{
+            type: String,
+            required: false,
+        },
+        resetOtpExpiry : {
+            type: Date,
+            required: false,    
         }
+
     },
     { timestamps: true }
 

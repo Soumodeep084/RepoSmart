@@ -25,7 +25,6 @@ type AuthApiResponse = {
   token: string;
 };
 
-
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -137,10 +136,84 @@ export function AuthDialog({
     }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  // Forgot Password Step :
+  const [step, setStep] = useState<"email" | "otp" | "reset">("email");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Forgot Password for:", forgotEmail);
-    // Add toast notification here later!
+
+    setLoading(true);
+    try {
+      await postJson("/api/auth/forgot-password", {
+        email: forgotEmail,
+      });
+
+      setStep("otp");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (otp.trim().length !== 6) {
+      alert("OTP must be 6 digits");
+      return;
+    }
+    setLoading(true);
+    try {
+      await postJson("/api/auth/verify-otp", {
+        email: forgotEmail,
+        otp,
+      });
+
+      setStep("reset");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("Confirm Password do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await postJson("/api/auth/reset-password", {
+        email: forgotEmail,
+        otp,
+        newPassword,
+      });
+
+      alert("Password Reset successfully");
+
+      setIsForgotPassword(false);
+      setStep("email");
+      setForgotEmail("");
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to reset password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Ensure the tab matches the button that opened the dialog
@@ -151,6 +224,18 @@ export function AuthDialog({
     setLoginError(null);
     setRegisterError(null);
   }, [open, defaultTab]);
+
+  // Forgot Password
+  useEffect(() => {
+    if (!open) {
+      setStep("email");
+      setOtp("");
+      setNewPassword("");
+      setForgotEmail("");
+      setConfirmPassword("");
+      setLoading(false);
+    }
+  }, [open]);
 
   // Reset internal view state when dialog closes so it opens fresh next time
   const handleOpenChange = (isOpen: boolean) => {
@@ -183,7 +268,11 @@ export function AuthDialog({
                 key={isForgotPassword ? "forgot-title" : "auth-title"}
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.22, ease }
+                }
                 className="inline-block"
               >
                 {isForgotPassword ? "Reset Password" : "Welcome to RepoSmart"}
@@ -201,11 +290,17 @@ export function AuthDialog({
               }
               initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease }}
+              transition={
+                shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease }
+              }
               className="inline-block"
             >
               {isForgotPassword
-                ? "Enter your email address and we'll send you a link to reset your password."
+                ? step === "email"
+                  ? "Enter your email address and we'll send you a code to your email to reset your password."
+                  : step === "otp"
+                    ? "Enter the 6-digit code sent to your email to verify your identity."
+                    : "OTP verified! Please enter your new password below."
                 : `${activeTab === "login" ? "Sign in" : "Sign up"} to start evaluating GitHub repositories`}
             </motion.span>
           </DialogDescription>
@@ -214,53 +309,147 @@ export function AuthDialog({
         <div className="p-4 sm:p-6 pt-2 sm:pt-4">
           {isForgotPassword ? (
             /* FORGOT PASSWORD VIEW */
-            <motion.div
-              className="space-y-4"
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-            >
-              <motion.form
-                onSubmit={handleForgotPassword}
-                className="space-y-4"
-                variants={containerVariants}
-              >
-                <motion.div className="space-y-2" variants={itemVariants}>
-                  <Label
-                    htmlFor="forgot-email"
-                    className="text-[#c9d1d9] text-sm"
-                  >
-                    Email address
-                  </Label>
-                  <Input
-                    id="forgot-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    required
-                    className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants}>
-                  <Button
-                    type="submit"
-                    className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
-                  >
-                    Send reset link
-                  </Button>
-                </motion.div>
-              </motion.form>
-              <motion.div variants={itemVariants}>
-                <button
-                  type="button"
-                  onClick={() => setIsForgotPassword(false)}
-                  className="inline-flex items-center text-xs sm:text-sm text-[#58a6ff] hover:underline"
+            <motion.div className="space-y-4">
+              {/* STEP 1 → EMAIL */}
+              {step === "email" && (
+                <motion.form
+                  onSubmit={handleForgotPassword}
+                  className="space-y-4"
+                  variants={containerVariants}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Back to Sign In
-                </button>
-              </motion.div>
+                  <motion.div className="space-y-2" variants={itemVariants}>
+                    <Label
+                      htmlFor="forgot-email"
+                      className="text-[#c9d1d9] text-sm"
+                    >
+                      Email address
+                    </Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      disabled={loading}
+                      required
+                      className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
+                    >
+                      {loading ? "Sending..." : "Send OTP"}
+                    </Button>
+                  </motion.div>
+                </motion.form>
+              )}
+
+              {/* STEP 2 → OTP */}
+              {step === "otp" && (
+                <motion.form onSubmit={verifyOtp} className="space-y-4">
+                  <motion.div className="space-y-2" variants={itemVariants}>
+                    <Label
+                      htmlFor="otp-enter"
+                      className="text-[#c9d1d9] text-sm"
+                    >
+                      Code sent to{" "}
+                      <motion.span className="text-[#388bfd]">
+                        {forgotEmail}
+                      </motion.span>
+                    </Label>
+                    <Input
+                      id="otp-enter"
+                      placeholder="Enter OTP"
+                      type="number"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                      disabled={loading}
+                      maxLength={6}
+                      max={999999}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
+                    >
+                      {loading ? "Verifying..." : "Verify OTP"}
+                    </Button>
+                  </motion.div>
+                </motion.form>
+              )}
+
+              {/* STEP 3 → RESET PASSWORD */}
+              {step === "reset" && (
+                <motion.form onSubmit={resetPassword} className="space-y-4">
+                  <motion.div className="space-y-2" variants={itemVariants}>
+                    <Label
+                      htmlFor="reset-new-password"
+                      className="text-[#c9d1d9] text-sm"
+                    >
+                      New Password{" "}
+                      <motion.span className="text-[#8b949e]">
+                        (min 6 characters)
+                      </motion.span>
+                    </Label>
+                    <Input
+                      id="reset-new-password"
+                      type="password"
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                    />
+
+                    <Label
+                      htmlFor="confirm-password"
+                      className="text-[#c9d1d9] text-sm  mt-5"
+                    >
+                      Confirm Password
+                    </Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 mt-2 shadow-lg shadow-[#1f6feb]/20"
+                    >
+                      {loading ? "Resetting..." : "Reset Password"}
+                    </Button>
+                  </motion.div>
+                </motion.form>
+              )}
+
+              {/* BACK BUTTON */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setStep("email");
+                }}
+                className="inline-flex items-center text-xs sm:text-sm text-[#58a6ff] hover:underline"
+              >
+                <ArrowLeft className="w-3 h-3 mr-1" />
+                Back to Sign In
+              </button>
             </motion.div>
           ) : (
             /* TABS VIEW */
