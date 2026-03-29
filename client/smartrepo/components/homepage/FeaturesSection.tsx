@@ -47,7 +47,7 @@ export function FeaturesSection() {
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-surface-1 relative overflow-hidden">
+    <section className="py-12 sm:py-16 bg-surface-1 relative overflow-hidden">
       {/* Parallax background elements */}
       <div
         className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#1f6feb] rounded-full mix-blend-multiply filter blur-3xl opacity-5"

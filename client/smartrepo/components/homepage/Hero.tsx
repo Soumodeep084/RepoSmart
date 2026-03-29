@@ -18,7 +18,7 @@ export function Hero({ onLogin, onRegister }: HeroProps) {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-background pt-20 pb-32 sm:px-14">
+    <section className="relative overflow-hidden bg-background pt-20 pb-16 sm:px-14">
       {/* Animated Grid Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div
