@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 
+const { redisGetJson, redisSetJson } = require("../config/redis");
+
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -110,6 +112,21 @@ function buildGitHubApiUrl(path, query) {
     }
   }
   return url.toString();
+}
+
+function getAnalyzeCacheTtlSeconds() {
+  const raw = process.env.REDIS_ANALYZE_TTL_SECONDS;
+  if (!isNonEmptyString(raw)) return 3600;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 3600;
+  return Math.floor(parsed);
+}
+
+function buildAnalyzeCacheKey(owner, repo) {
+  const baseKey = `analyze:v1:${String(owner).toLowerCase()}/${String(repo).toLowerCase()}`;
+  // Hash to keep keys short and safe.
+  const digest = crypto.createHash("sha256").update(baseKey).digest("hex");
+  return `analyze:v1:${digest}`;
 }
 
 function getGitHubHeaders() {
@@ -692,6 +709,16 @@ exports.analyzeRepository = async (req, res) => {
 
     const { owner, repo } = parseGithubRepoInput(url);
 
+    const cacheKey = buildAnalyzeCacheKey(owner, repo);
+    const cached = await redisGetJson(cacheKey);
+    if (cached && typeof cached === "object") {
+      res.set("X-RepoSmart-Cache", "HIT");
+      if (cached.input && typeof cached.input === "object") {
+        cached.input = { ...cached.input, url };
+      }
+      return res.json(cached);
+    }
+
     const repoMetaResp = await githubRequestJson(`/repos/${owner}/${repo}`);
     const repoMeta = repoMetaResp.data;
 
@@ -821,7 +848,7 @@ exports.analyzeRepository = async (req, res) => {
         percent: total > 0 ? Math.round((item.bytes / total) * 100) : 0,
       }));
 
-    res.json({
+    const payload = {
       input: { owner, repo, url },
       repo: {
         fullName: repoMeta.full_name,
@@ -863,7 +890,15 @@ exports.analyzeRepository = async (req, res) => {
       score,
       summary,
       roadmap,
-    });
+
+      // Cache metadata is intentionally omitted from response.
+    };
+
+    // Best-effort cache write.
+    await redisSetJson(cacheKey, payload, getAnalyzeCacheTtlSeconds());
+
+    res.set("X-RepoSmart-Cache", "MISS");
+    res.json(payload);
   } catch (err) {
     const status = err && typeof err.statusCode === "number" ? err.statusCode : 500;
 
