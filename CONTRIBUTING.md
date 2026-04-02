@@ -33,7 +33,7 @@ npm install
 
 ### Configure environment variables
 
-Create `server/.env` (never commit real secrets):
+Copy `server/.env.example` to `server/.env` and fill values (never commit real secrets):
 
 ```bash
 PORT=5000
@@ -43,9 +43,22 @@ GITHUB_API_BASE=https://api.github.com
 GITHUB_API_VERSION=2022-11-28
 # Optional
 GITHUB_TOKEN=github_pat_or_ghp_token_here
+
+# Required by the frontend (client id is not a secret)
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+
+# Required for password reset emails (Mailtrap SMTP)
+MAILTRAP_HOST=sandbox.smtp.mailtrap.io
+MAILTRAP_PORT=2525
+MAILTRAP_USER=your_mailtrap_user
+MAILTRAP_PASS=your_mailtrap_pass
+
+# Optional: Redis cache for /api/repo/analyze
+REDIS_URI=redis://default:<password>@<host>:<port>
+REDIS_ANALYZE_TTL_SECONDS=3600
 ```
 
-Optional frontend override: create `client/smartrepo/.env.local`:
+Optional frontend override: copy `client/smartrepo/.env.example` to `client/smartrepo/.env.local` (or create it) and set:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:5000

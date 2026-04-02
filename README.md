@@ -54,6 +54,11 @@ Open `http://localhost:3000`.
 
 RepoSmart loads environment variables from `server/.env`.
 
+Start by copying the template:
+
+- macOS/Linux: `cp server/.env.example server/.env`
+- Windows (PowerShell): `Copy-Item server/.env.example server/.env`
+
 ```bash
 # Server
 PORT=5000
@@ -70,6 +75,19 @@ GITHUB_API_VERSION=2022-11-28
 
 # Optional: increases GitHub API rate limits
 GITHUB_TOKEN=github_pat_or_ghp_token_here
+
+# Google OAuth (required by the frontend; client id is NOT a secret)
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+
+# Email (password reset / OTP) — Mailtrap SMTP
+MAILTRAP_HOST=sandbox.smtp.mailtrap.io
+MAILTRAP_PORT=2525
+MAILTRAP_USER=your_mailtrap_user
+MAILTRAP_PASS=your_mailtrap_pass
+
+# Optional: Redis cache for /api/repo/analyze (leave blank to disable caching)
+REDIS_URI=redis://default:<password>@<host>:<port>
+REDIS_ANALYZE_TTL_SECONDS=3600
 ```
 
 Important:
@@ -86,6 +104,8 @@ Create `client/smartrepo/.env.local`:
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
+
+You can also start from the template at `client/smartrepo/.env.example`.
 
 ## API
 
@@ -128,12 +148,12 @@ npm run lint
 
 ## Contributing
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Security
 
-See [SECURITY.md](../../SECURITY.md).
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
-See [LICENSE](../../LICENSE).
+See [LICENSE](LICENSE).
