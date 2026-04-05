@@ -122,11 +122,197 @@ function getAnalyzeCacheTtlSeconds() {
   return Math.floor(parsed);
 }
 
+function getAiScanCacheTtlSeconds() {
+  const raw = process.env.REDIS_AI_SCAN_TTL_SECONDS;
+  if (!isNonEmptyString(raw)) return 900;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 900;
+  return Math.floor(parsed);
+}
+
 function buildAnalyzeCacheKey(owner, repo) {
   const baseKey = `analyze:v1:${String(owner).toLowerCase()}/${String(repo).toLowerCase()}`;
   // Hash to keep keys short and safe.
   const digest = crypto.createHash("sha256").update(baseKey).digest("hex");
   return `analyze:v1:${digest}`;
+}
+
+function buildAiScanCacheKey(owner, repo, model) {
+  const baseKey = `ai-scan:v1:${String(owner).toLowerCase()}/${String(repo).toLowerCase()}:${String(model || "").toLowerCase()}`;
+  const digest = crypto.createHash("sha256").update(baseKey).digest("hex");
+  return `ai-scan:v1:${digest}`;
+}
+
+function getOpenRouterApiKey() {
+  const key = process.env.OPENROUTER_API_KEY || process.env.openrouter_api_key;
+  if (!isNonEmptyString(key)) {
+    const err = new Error(
+      "OpenRouter is not configured. Set OPENROUTER_API_KEY in server/.env.",
+    );
+    err.statusCode = 500;
+    throw err;
+  }
+  return key.trim();
+}
+
+function getOpenRouterModels() {
+  const rawList = process.env.OPENROUTER_MODELS || process.env.openrouter_models || "";
+  const rawModel = process.env.OPENROUTER_MODEL || process.env.openrouter_model || "";
+
+  let models = [];
+
+  if (isNonEmptyString(rawList)) {
+    models = rawList
+      .split(/[,\n]/)
+      .map((m) => String(m || "").trim())
+      .filter(Boolean);
+  } else if (isNonEmptyString(rawModel)) {
+    models = [rawModel.trim()];
+  } else {
+    // User requested the OpenRouter free route by default.
+    models = ["openrouter/free"];
+  }
+
+  // Deduplicate while preserving order.
+  const seen = new Set();
+  models = models.filter((m) => {
+    const key = m.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (models.length === 0) {
+    const err = new Error(
+      "OpenRouter models are not configured. Set OPENROUTER_MODELS in server/.env.",
+    );
+    err.statusCode = 500;
+    throw err;
+  }
+
+  // Safety rails: enforce free-only usage.
+  for (const model of models) {
+    // OpenRouter routed models (like openrouter/free) are allowed, but we still
+    // enforce $0 routing via provider.max_price in the request.
+    if (model.startsWith("openrouter/")) continue;
+
+    if (!model.endsWith(":free")) {
+      const err = new Error(
+        `Paid models are not allowed. Model must end with ':free' (got: ${model}).`,
+      );
+      err.statusCode = 500;
+      throw err;
+    }
+  }
+
+  return models;
+}
+
+function extractOpenRouterText(payload) {
+  const choice = payload && payload.choices && payload.choices[0];
+  const message = choice && choice.message;
+  const content = message && message.content;
+
+  if (typeof content === "string") return content.trim();
+
+  // Some OpenAI-compatible APIs may return a rich content array.
+  if (Array.isArray(content)) {
+    const text = content
+      .map((part) => (part && part.type === "text" && typeof part.text === "string" ? part.text : ""))
+      .join("")
+      .trim();
+    return text;
+  }
+
+  return "";
+}
+
+async function openRouterGenerateText(prompt) {
+  const apiKey = getOpenRouterApiKey();
+  const models = getOpenRouterModels();
+
+  const shouldFallback = (statusCode, message) => {
+    // Typical transient failures for free-tier/shared providers.
+    if (statusCode === 429) return true;
+    if (statusCode === 408) return true;
+    if (statusCode === 502 || statusCode === 503 || statusCode === 504) return true;
+    if (statusCode === 404 && typeof message === "string" && /no endpoints found/i.test(message)) {
+      return true;
+    }
+    if (typeof message === "string" && /rate\s*limit|temporarily|overloaded|try again/i.test(message)) {
+      return true;
+    }
+    return false;
+  };
+
+  let lastError = null;
+
+  for (const model of models) {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        // Optional headers recommended by OpenRouter (harmless if omitted)
+        "X-Title": "RepoSmart",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+        max_tokens: 1024,
+        provider: {
+          // Enforce free-only usage at the routing layer.
+          // If no $0 provider is available, the request will fail rather than charge.
+          max_price: { prompt: 0, completion: 0 },
+          sort: "price",
+        },
+      }),
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      let message = `OpenRouter API request failed (${res.status})`;
+      if (json && typeof json === "object" && json.error && typeof json.error === "object") {
+        if (typeof json.error.message === "string" && json.error.message.trim().length > 0) {
+          message = json.error.message;
+        }
+
+        // OpenRouter sometimes includes provider details under error.metadata.raw.
+        if (
+          json.error.metadata &&
+          typeof json.error.metadata === "object" &&
+          typeof json.error.metadata.raw === "string" &&
+          json.error.metadata.raw.trim().length > 0
+        ) {
+          message = json.error.metadata.raw;
+        }
+      }
+
+      const err = new Error(message);
+      err.statusCode = res.status;
+      lastError = err;
+
+      if (shouldFallback(res.status, message)) {
+        continue;
+      }
+
+      throw err;
+    }
+
+    const text = extractOpenRouterText(json);
+    if (!isNonEmptyString(text)) {
+      const err = new Error("OpenRouter returned an empty response.");
+      err.statusCode = 502;
+      lastError = err;
+      continue;
+    }
+
+    return { model, text };
+  }
+
+  throw lastError || new Error("OpenRouter request failed.");
 }
 
 function getGitHubHeaders() {
@@ -705,7 +891,7 @@ async function fetchRecentCommits(owner, repo, sinceIso) {
 
 exports.analyzeRepository = async (req, res) => {
   try {
-    const url = req.body && req.body.url;
+    const url = (req.body && (req.body.url || req.body.input)) || "";
 
     const { owner, repo } = parseGithubRepoInput(url);
 
@@ -904,6 +1090,171 @@ exports.analyzeRepository = async (req, res) => {
 
     // Friendly GitHub messages.
     let message = err instanceof Error ? err.message : "Unable to analyze repository.";
+
+    if (status === 404) {
+      message = "Repository not found (or it may be private).";
+    }
+
+    if (status === 403 && /rate limit/i.test(message)) {
+      message = "GitHub API rate limit exceeded. Set GITHUB_TOKEN in server environment to increase limits.";
+    }
+
+    res.status(status).json({ message });
+  }
+};
+
+exports.aiScanRepository = async (req, res) => {
+  try {
+    const url = (req.body && (req.body.url || req.body.input)) || "";
+
+    const { owner, repo } = parseGithubRepoInput(url);
+
+    const modelsSignature = getOpenRouterModels().join(",");
+    const cacheKey = buildAiScanCacheKey(owner, repo, modelsSignature);
+    const cached = await redisGetJson(cacheKey);
+    if (cached && typeof cached === "object") {
+      res.set("X-RepoSmart-Cache", "HIT");
+      if (cached.input && typeof cached.input === "object") {
+        cached.input = { ...cached.input, url };
+      }
+      return res.json(cached);
+    }
+
+    const repoMetaResp = await githubRequestJson(`/repos/${owner}/${repo}`);
+    const repoMeta = repoMetaResp.data;
+
+    const languagesResp = await githubRequestJson(`/repos/${owner}/${repo}/languages`);
+    const languages = languagesResp.data || {};
+
+    let readmeText = "";
+    try {
+      const readmeResp = await githubRequestText(
+        `/repos/${owner}/${repo}/readme`,
+        undefined,
+        "application/vnd.github.raw",
+      );
+      readmeText = readmeResp.data;
+    } catch {
+      readmeText = "";
+    }
+
+    let treeInfo = {
+      fileCount: 0,
+      directoryCount: 0,
+      truncated: false,
+      topLevelCounts: {},
+      paths: [],
+    };
+
+    try {
+      const treeResp = await githubRequestJson(`/repos/${owner}/${repo}/git/trees/${repoMeta.default_branch}`, {
+        recursive: 1,
+      });
+
+      const tree = treeResp.data;
+      const items = tree && Array.isArray(tree.tree) ? tree.tree : [];
+
+      const filePaths = items
+        .filter((item) => item && item.type === "blob" && typeof item.path === "string")
+        .map((item) => item.path);
+
+      const dirCount = items.filter((item) => item && item.type === "tree").length;
+
+      treeInfo = {
+        fileCount: filePaths.length,
+        directoryCount: dirCount,
+        truncated: Boolean(tree && tree.truncated),
+        topLevelCounts: countByTopLevelFolder(filePaths),
+        paths: filePaths,
+      };
+    } catch {
+      // keep going
+    }
+
+    const pathsSet = new Set(treeInfo.paths);
+    const tooling = detectTooling(pathsSet);
+    const readme = analyzeReadme(readmeText);
+
+    // Language percentages (top 5)
+    const entries = Object.entries(languages);
+    const totalBytes = entries.reduce((acc, [, bytes]) => acc + safeNumber(bytes, 0), 0);
+    const languagesTop = entries
+      .map(([name, bytes]) => ({ name, bytes: safeNumber(bytes, 0) }))
+      .sort((a, b) => b.bytes - a.bytes)
+      .slice(0, 5)
+      .map((item) => ({
+        ...item,
+        percent: totalBytes > 0 ? Math.round((item.bytes / totalBytes) * 100) : 0,
+      }));
+
+    const metadata = {
+      input: { owner, repo, url },
+      repo: {
+        fullName: repoMeta.full_name,
+        htmlUrl: repoMeta.html_url,
+        description: repoMeta.description,
+        defaultBranch: repoMeta.default_branch,
+        isFork: Boolean(repoMeta.fork),
+        visibility: repoMeta.visibility,
+        stars: safeNumber(repoMeta.stargazers_count, 0),
+        forks: safeNumber(repoMeta.forks_count, 0),
+        watchers: safeNumber(repoMeta.watchers_count, 0),
+        openIssues: safeNumber(repoMeta.open_issues_count, 0),
+        license: repoMeta.license ? repoMeta.license.spdx_id : null,
+        topics: Array.isArray(repoMeta.topics) ? repoMeta.topics : [],
+        createdAt: repoMeta.created_at,
+        updatedAt: repoMeta.updated_at,
+        pushedAt: repoMeta.pushed_at,
+        sizeKb: safeNumber(repoMeta.size, 0),
+      },
+      snapshot: {
+        files: {
+          fileCount: treeInfo.fileCount,
+          directoryCount: treeInfo.directoryCount,
+          truncated: treeInfo.truncated,
+          topLevelCounts: treeInfo.topLevelCounts,
+        },
+        languagesTop,
+        readme: {
+          present: readme.present,
+          wordCount: readme.wordCount,
+          hasInstall: readme.hasInstall,
+          hasUsage: readme.hasUsage,
+          hasScreenshots: readme.hasScreenshots,
+          hasBadges: readme.hasBadges,
+        },
+        tooling,
+      },
+    };
+
+    const prompt =
+      "You are RepoSmart, an assistant that evaluates GitHub repositories using metadata only. " +
+      "Given the JSON metadata below, produce:\n" +
+      "1) A 2-3 sentence overview.\n" +
+      "2) Strengths (3-6 bullet points).\n" +
+      "3) Gaps/risks (3-6 bullet points).\n" +
+      "4) A prioritized action plan (5 items, concrete, repo-agnostic).\n" +
+      "Keep the response plain text (no markdown headings).\n\n" +
+      `METADATA_JSON:\n${JSON.stringify(metadata, null, 2)}`;
+
+    const ai = await openRouterGenerateText(prompt);
+
+    const payload = {
+      ...metadata,
+      ai: {
+        model: ai.model,
+        output: ai.text,
+      },
+    };
+
+    await redisSetJson(cacheKey, payload, getAiScanCacheTtlSeconds());
+
+    res.set("X-RepoSmart-Cache", "MISS");
+    res.json(payload);
+  } catch (err) {
+    const status = err && typeof err.statusCode === "number" ? err.statusCode : 500;
+
+    let message = err instanceof Error ? err.message : "Unable to scan repository.";
 
     if (status === 404) {
       message = "Repository not found (or it may be private).";

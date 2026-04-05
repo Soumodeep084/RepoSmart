@@ -23,7 +23,8 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
   const isAuthed = Boolean(token);
-  const isAnalyzePage = pathname === "/analyze";
+  const isHumanAnalyzePage = pathname === "/analyze";
+  const isAiAnalyzePage = pathname === "/ai-analyze";
 
   const handleSignOut = () => {
     clearAuth();
@@ -91,9 +92,16 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                 <Link
                   href="/analyze"
                   className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                  aria-current={isAnalyzePage ? "page" : undefined}
+                  aria-current={isHumanAnalyzePage ? "page" : undefined}
                 >
-                  Analyzer
+                  Human Analyzer
+                </Link>
+                <Link
+                  href="/ai-analyze"
+                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                  aria-current={isAiAnalyzePage ? "page" : undefined}
+                >
+                  AI Analyzer
                 </Link>
               </>
             ) : (
@@ -122,7 +130,14 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                   asChild
                   className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
                 >
-                  <Link href="/analyze">Analyze</Link>
+                  <Link href="/analyze">Human Analyzer</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-[#30363d] text-[#c9d1d9] hover:text-white hover:bg-surface-2 px-3 sm:px-4 text-sm"
+                >
+                  <Link href="/ai-analyze">AI Analyzer</Link>
                 </Button>
                 <Button
                   variant="ghost"
