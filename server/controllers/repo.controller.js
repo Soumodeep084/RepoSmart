@@ -159,7 +159,7 @@ function getOpenRouterModels() {
   const rawList = process.env.OPENROUTER_MODELS || process.env.openrouter_models || "";
   const rawModel = process.env.OPENROUTER_MODEL || process.env.openrouter_model || "";
 
-  let models = [];
+  let models;
 
   if (isNonEmptyString(rawList)) {
     models = rawList
@@ -1118,6 +1118,57 @@ exports.aiScanRepository = async (req, res) => {
         cached.input = { ...cached.input, url };
       }
       return res.json(cached);
+    }
+
+    // If the repo was recently analyzed, reuse that cached GitHub metadata to
+    // avoid redundant GitHub API calls for AI scans.
+    const analyzeCacheKey = buildAnalyzeCacheKey(owner, repo);
+    const analyzeCached = await redisGetJson(analyzeCacheKey);
+    if (
+      analyzeCached &&
+      typeof analyzeCached === "object" &&
+      analyzeCached.repo &&
+      typeof analyzeCached.repo === "object" &&
+      analyzeCached.snapshot &&
+      typeof analyzeCached.snapshot === "object"
+    ) {
+      const snapshot = analyzeCached.snapshot;
+
+      const metadata = {
+        input: { owner, repo, url },
+        repo: analyzeCached.repo,
+        snapshot: {
+          files: snapshot.files,
+          languagesTop: snapshot.languagesTop,
+          readme: snapshot.readme,
+          tooling: snapshot.tooling,
+        },
+      };
+
+      const prompt =
+        "You are RepoSmart, an assistant that evaluates GitHub repositories using metadata only. " +
+        "Given the JSON metadata below, produce:\n" +
+        "1) A 2-3 sentence overview.\n" +
+        "2) Strengths (3-6 bullet points).\n" +
+        "3) Gaps/risks (3-6 bullet points).\n" +
+        "4) A prioritized action plan (5 items, concrete, repo-agnostic).\n" +
+        "Keep the response plain text (no markdown headings).\n\n" +
+        `METADATA_JSON:\n${JSON.stringify(metadata, null, 2)}`;
+
+      const ai = await openRouterGenerateText(prompt);
+
+      const payload = {
+        ...metadata,
+        ai: {
+          model: ai.model,
+          output: ai.text,
+        },
+      };
+
+      await redisSetJson(cacheKey, payload, getAiScanCacheTtlSeconds());
+
+      res.set("X-RepoSmart-Cache", "MISS");
+      return res.json(payload);
     }
 
     const repoMetaResp = await githubRequestJson(`/repos/${owner}/${repo}`);
