@@ -3,9 +3,10 @@ const router = express.Router();
 const { register, login } = require("../controllers/auth.controller");
 const { googleAuth } = require("../controllers/googleAuth.controller");
 const { sendOTP, verifyOTP, resetPassword } = require("../controllers/forgotPassword.controller");
+const verifyCaptcha = require("../middleware/captcha.middleware");
 
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", verifyCaptcha, register);
+router.post("/login", verifyCaptcha, login);
 // Exposes Google OAuth client id to the frontend.
 // Note: client id is not a secret (unlike the client secret).
 router.get("/google-client-id", (req, res) => {

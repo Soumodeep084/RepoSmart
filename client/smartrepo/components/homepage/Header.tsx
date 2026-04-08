@@ -79,91 +79,93 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            {isAuthed ? (
-              <>
-                <Link
-                  href="/"
-                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/analyze"
-                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                  aria-current={isHumanAnalyzePage ? "page" : undefined}
-                >
-                  Human Analyzer
-                </Link>
-                <Link
-                  href="/ai-analyze"
-                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                  aria-current={isAiAnalyzePage ? "page" : undefined}
-                >
-                  AI Analyzer
-                </Link>
-              </>
-            ) : (
-              <>
-                <a
-                  href="#features"
-                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                >
-                  Features
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
-                >
-                  How it Works
-                </a>
-              </>
-            )}
-          </nav>
+          {/* Right-side controls */}
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
+            <nav className="hidden md:flex items-center gap-6">
+              {isAuthed ? (
+                <>
+                  <Link
+                    href="/"
+                    className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                  >
+                    Home
+                  </Link>
+                  <Link
+                    href="/analyze"
+                    className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                    aria-current={isHumanAnalyzePage ? "page" : undefined}
+                  >
+                    Human Analyzer
+                  </Link>
+                  <Link
+                    href="/ai-analyze"
+                    className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                    aria-current={isAiAnalyzePage ? "page" : undefined}
+                  >
+                    AI Analyzer
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="#features"
+                    className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                  >
+                    Features
+                  </a>
+                  <a
+                    href="#how-it-works"
+                    className="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-sm font-medium"
+                  >
+                    How it Works
+                  </a>
+                </>
+              )}
+            </nav>
 
-          {/* Auth Buttons - adjusted gap and padding for mobile */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {isAuthed ? (
-              <>
-                <Button
-                  asChild
-                  className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
-                >
-                  <Link href="/analyze">Human Analyzer</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="border-[#30363d] text-[#c9d1d9] hover:text-white hover:bg-surface-2 px-3 sm:px-4 text-sm"
-                >
-                  <Link href="/ai-analyze">AI Analyzer</Link>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleSignOut}
-                  className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
-                >
-                  Sign out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={onLogin}
-                  className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
-                >
-                  Sign in
-                </Button>
-                <Button
-                  onClick={onRegister}
-                  className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
-                >
-                  Sign up
-                </Button>
-              </>
-            )}
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {isAuthed ? (
+                <>
+                  <Button
+                    asChild
+                    className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
+                  >
+                    <Link href="/analyze">Human Analyzer</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-[#30363d] text-[#c9d1d9] hover:text-white hover:bg-surface-2 px-3 sm:px-4 text-sm"
+                  >
+                    <Link href="/ai-analyze">AI Analyzer</Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleSignOut}
+                    className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
+                  >
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={onLogin}
+                    className="text-[#c9d1d9] hover:text-white hover:bg-surface-2 border-0 px-2 sm:px-4 text-sm"
+                  >
+                    Sign in
+                  </Button>
+                  <Button
+                    onClick={onRegister}
+                    className="bg-[#1f6feb] hover:bg-[#388bfd] text-white border-0 shadow-lg shadow-[#1f6feb]/20 px-3 sm:px-4 text-sm"
+                  >
+                    Sign up
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
