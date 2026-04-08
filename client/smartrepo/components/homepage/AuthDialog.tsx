@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import ReCAPTCHA from "react-google-recaptcha";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,31 @@ export function AuthDialog({
   const [registerSubmitting, setRegisterSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(
+    null,
+  );
+  const [registerCaptchaToken, setRegisterCaptchaToken] = useState<
+    string | null
+  >(null);
+
+  const loginCaptchaRef = useRef<ReCAPTCHA | null>(null);
+  const registerCaptchaRef = useRef<ReCAPTCHA | null>(null);
+  const recaptchaSiteKey =
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? "";
+
+  const handleLoginCaptchaChange = (token: string | null) => {
+    setLoginCaptchaToken(token);
+    if (token) {
+      setLoginError(null);
+    }
+  };
+
+  const handleRegisterCaptchaChange = (token: string | null) => {
+    setRegisterCaptchaToken(token);
+    if (token) {
+      setRegisterError(null);
+    }
+  };
 
   const shouldReduceMotion = useReducedMotion();
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -94,18 +120,32 @@ export function AuthDialog({
     if (loginSubmitting) return;
 
     setLoginError(null);
+
+    if (!recaptchaSiteKey) {
+      setLoginError("CAPTCHA is not configured. Please contact support.");
+      return;
+    }
+
+    if (!loginCaptchaToken) {
+      setLoginError("Please complete CAPTCHA before signing in.");
+      return;
+    }
+
     setLoginSubmitting(true);
 
     try {
       const payload = await postJson<AuthApiResponse>("/api/auth/login", {
         email: loginEmail.trim().toLowerCase(),
         password: loginPassword,
+        captchaToken: loginCaptchaToken,
       });
       setAuth(payload);
       onAuthenticated?.();
       handleOpenChange(false);
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : "Unable to sign in.");
+      loginCaptchaRef.current?.reset();
+      setLoginCaptchaToken(null);
     } finally {
       setLoginSubmitting(false);
     }
@@ -116,6 +156,17 @@ export function AuthDialog({
     if (registerSubmitting) return;
 
     setRegisterError(null);
+
+    if (!recaptchaSiteKey) {
+      setRegisterError("CAPTCHA is not configured. Please contact support.");
+      return;
+    }
+
+    if (!registerCaptchaToken) {
+      setRegisterError("Please complete CAPTCHA before signing up.");
+      return;
+    }
+
     setRegisterSubmitting(true);
 
     try {
@@ -123,6 +174,7 @@ export function AuthDialog({
         username: registerUsername.trim(),
         email: registerEmail.trim().toLowerCase(),
         password: registerPassword,
+        captchaToken: registerCaptchaToken,
       });
       setAuth(payload);
       onAuthenticated?.();
@@ -131,6 +183,8 @@ export function AuthDialog({
       setRegisterError(
         err instanceof Error ? err.message : "Unable to create account.",
       );
+      registerCaptchaRef.current?.reset();
+      setRegisterCaptchaToken(null);
     } finally {
       setRegisterSubmitting(false);
     }
@@ -223,6 +277,10 @@ export function AuthDialog({
     setIsForgotPassword(false);
     setLoginError(null);
     setRegisterError(null);
+    setLoginCaptchaToken(null);
+    setRegisterCaptchaToken(null);
+    loginCaptchaRef.current?.reset();
+    registerCaptchaRef.current?.reset();
   }, [open, defaultTab]);
 
   // Forgot Password
@@ -248,6 +306,10 @@ export function AuthDialog({
       setRegisterSubmitting(false);
       setLoginPassword("");
       setRegisterPassword("");
+      setLoginCaptchaToken(null);
+      setRegisterCaptchaToken(null);
+      loginCaptchaRef.current?.reset();
+      registerCaptchaRef.current?.reset();
     }
     onOpenChange(isOpen);
   };
@@ -531,6 +593,22 @@ export function AuthDialog({
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
+                      <div className="mt-1">
+                        {recaptchaSiteKey ? (
+                          <ReCAPTCHA
+                            ref={loginCaptchaRef}
+                            sitekey={recaptchaSiteKey}
+                            onChange={handleLoginCaptchaChange}
+                            onExpired={() => setLoginCaptchaToken(null)}
+                          />
+                        ) : (
+                          <p className="text-xs text-red-400">
+                            CAPTCHA is currently unavailable.
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
                       <Button
                         type="submit"
                         disabled={loginSubmitting}
@@ -620,6 +698,22 @@ export function AuthDialog({
                         disabled={registerSubmitting}
                         className="bg-background border-[#30363d] text-white placeholder:text-[#6e7681] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       />
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <div className="mt-1">
+                        {recaptchaSiteKey ? (
+                          <ReCAPTCHA
+                            ref={registerCaptchaRef}
+                            sitekey={recaptchaSiteKey}
+                            onChange={handleRegisterCaptchaChange}
+                            onExpired={() => setRegisterCaptchaToken(null)}
+                          />
+                        ) : (
+                          <p className="text-xs text-red-400">
+                            CAPTCHA is currently unavailable.
+                          </p>
+                        )}
+                      </div>
                     </motion.div>
                     <motion.div variants={itemVariants}>
                       <Button

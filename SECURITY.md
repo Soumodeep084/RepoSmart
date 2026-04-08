@@ -31,6 +31,12 @@ If you suspect credentials were exposed (e.g., tokens, database URIs, JWT secret
 - Remove the secret from the codebase and configuration templates
 - Consider rewriting git history if a secret was committed
 
+## Authentication abuse protection
+
+- Sign in and sign up endpoints require Google reCAPTCHA v2 verification.
+- Backend validates CAPTCHA tokens server-side using `RECAPTCHA_SECRET_KEY`.
+- Frontend must provide `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` so users can complete the CAPTCHA challenge before auth requests are sent.
+
 ## Coordinated disclosure
 
 We’ll work with you to validate the report and coordinate a fix and disclosure timeline.
