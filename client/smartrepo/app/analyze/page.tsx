@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,6 +18,8 @@ import {
   TrendingUp,
   GitBranch,
   CheckCircle2,
+  Info,
+  Shield,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -32,10 +40,10 @@ import { Footer } from "../../components/homepage/Footer";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { LoadingVideo } from "../../components/ui/loading-video";
 
 import { getAuthToken, getAuthUser, subscribeAuth } from "../../lib/auth";
 import { postJson } from "../../lib/api";
+import { getLicenseInfo } from "@/components/ui/utils";
 
 type ScoreBreakdownItem = {
   key: string;
@@ -130,7 +138,34 @@ type ScoreRingProps = {
   score: number;
 };
 
-const PIE_COLORS = ["#58a6ff", "#79c0ff", "#1f6feb", "#3fb950", "#f2cc60", "#f0883e"];
+const PIE_COLORS = [
+  "#58a6ff",
+  "#79c0ff",
+  "#1f6feb",
+  "#3fb950",
+  "#f2cc60",
+  "#f0883e",
+];
+
+const tooltipStyle = {
+  contentStyle: {
+    backgroundColor: "#0d1117",
+    border: "1px solid #30363d",
+    borderRadius: "10px",
+    padding: "8px 10px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+  },
+  labelStyle: {
+    color: "#8b949e",
+    fontSize: "11px",
+    marginBottom: "2px",
+  },
+  itemStyle: {
+    color: "#e6edf3",
+    fontSize: "12px",
+    fontWeight: 500,
+  },
+};
 
 function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
@@ -139,7 +174,11 @@ function formatPercent(value: number) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 }
 
 function isDetectedLicense(license: string | null) {
@@ -189,8 +228,20 @@ function ScoreRing({ score }: ScoreRingProps) {
 
   return (
     <div className="relative h-40 w-40">
-      <svg className="h-40 w-40 -rotate-90" viewBox="0 0 160 160" role="img" aria-label={`Score ${clamped} out of 100`}>
-        <circle cx="80" cy="80" r={radius} fill="none" stroke="#1f2a3d" strokeWidth="14" />
+      <svg
+        className="h-40 w-40 -rotate-90"
+        viewBox="0 0 160 160"
+        role="img"
+        aria-label={`Score ${clamped} out of 100`}
+      >
+        <circle
+          cx="80"
+          cy="80"
+          r={radius}
+          fill="none"
+          stroke="#1f2a3d"
+          strokeWidth="14"
+        />
         <motion.circle
           cx="80"
           cy="80"
@@ -205,7 +256,13 @@ function ScoreRing({ score }: ScoreRingProps) {
           strokeDasharray={circumference}
         />
         <defs>
-          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient
+            id="scoreGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
             <stop offset="0%" stopColor="#79c0ff" />
             <stop offset="60%" stopColor="#58a6ff" />
             <stop offset="100%" stopColor="#1f6feb" />
@@ -214,8 +271,29 @@ function ScoreRing({ score }: ScoreRingProps) {
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-3xl font-bold text-white tabular-nums">{displayedScore}</div>
+        <div className="text-3xl font-bold text-white tabular-nums">
+          {displayedScore}
+        </div>
         <div className="text-xs text-[#8b949e]">out of 100</div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingPanel() {
+  return (
+    <div className="mt-10 rounded-2xl border border-[#30363d] bg-surface-1/80 p-6">
+      <div className="flex items-center gap-3 text-[#c9d1d9]">
+        <Loader2 className="h-5 w-5 animate-spin text-[#58a6ff]" />
+        <span className="text-sm">
+          Analyzing repository and generating roadmap...
+        </span>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <div className="h-3 w-2/3 rounded-full bg-surface-2 animate-pulse" />
+        <div className="h-3 w-full rounded-full bg-surface-2 animate-pulse" />
+        <div className="h-3 w-4/5 rounded-full bg-surface-2 animate-pulse" />
       </div>
     </div>
   );
@@ -237,6 +315,8 @@ export default function AnalyzePage() {
     if (!currentToken) router.replace("/");
   }, [router]);
 
+  const licenseInfo = getLicenseInfo(result?.repo.license || null);
+
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -251,11 +331,17 @@ export default function AnalyzePage() {
         return;
       }
 
-      const data = await postJson<RepoAnalysisResponse>("/api/repo/analyze", { url: repoUrl }, { token: currentToken });
+      const data = await postJson<RepoAnalysisResponse>(
+        "/api/repo/analyze",
+        { url: repoUrl },
+        { token: currentToken },
+      );
       setResult(data);
     } catch (err) {
       setResult(null);
-      setError(err instanceof Error ? err.message : "Unable to analyze repository.");
+      setError(
+        err instanceof Error ? err.message : "Unable to analyze repository.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -264,7 +350,8 @@ export default function AnalyzePage() {
   const breakdownChart = useMemo(
     () =>
       (result?.score.breakdown ?? []).map((item) => ({
-        name: item.label.length > 14 ? `${item.label.slice(0, 14)}...` : item.label,
+        name:
+          item.label.length > 14 ? `${item.label.slice(0, 14)}...` : item.label,
         score: Number(((item.score / Math.max(item.max, 1)) * 100).toFixed(1)),
       })),
     [result],
@@ -283,7 +370,10 @@ export default function AnalyzePage() {
   const activityBars = useMemo(() => {
     if (!result) return [];
     const commitsValue = Math.min(100, result.snapshot.git.commitsLast90Days);
-    const activeDaysValue = Math.min(100, Math.round((result.snapshot.git.activeCommitDaysLast90Days / 90) * 100));
+    const activeDaysValue = Math.min(
+      100,
+      Math.round((result.snapshot.git.activeCommitDaysLast90Days / 90) * 100),
+    );
     const prValue = Math.min(100, result.snapshot.git.pullRequests * 8);
 
     return [
@@ -299,8 +389,10 @@ export default function AnalyzePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {submitting ? <LoadingVideo message="Analyzing repository…" /> : null}
-      <Header onLogin={() => router.push("/")} onRegister={() => router.push("/")} />
+      <Header
+        onLogin={() => router.push("/")}
+        onRegister={() => router.push("/")}
+      />
 
       <main>
         <section className="relative overflow-hidden bg-background pt-16 pb-20">
@@ -319,24 +411,36 @@ export default function AnalyzePage() {
 
           <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-10">
             <div className="mx-auto max-w-6xl">
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45 }}
+              >
                 <div
                   className="rs-glow inline-flex items-center gap-2 rounded-full border border-[#30363d] bg-surface-1 px-3 py-1 text-sm"
-                  style={{ "--rs-glow-color": "#58a6ff" } as React.CSSProperties}
+                  style={
+                    { "--rs-glow-color": "#58a6ff" } as React.CSSProperties
+                  }
                 >
                   <Sparkles className="h-4 w-4 text-[#58a6ff]" />
                   <span className="text-[#c9d1d9]">Repository Quality Lab</span>
-                  {user ? <span className="text-[#8b949e]">• {user.username}</span> : null}
+                  {user ? (
+                    <span className="text-[#8b949e]">• {user.username}</span>
+                  ) : null}
                 </div>
 
                 <h1 className="rs-text-glow mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
                   Analyze repository health
                 </h1>
                 <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#8b949e] sm:text-lg">
-                  Get a polished score dashboard, actionable roadmap, and a clean summary that helps your project look production-ready.
+                  Get a polished score dashboard, actionable roadmap, and a
+                  clean summary that helps your project look production-ready.
                 </p>
 
-                <form onSubmit={handleAnalyze} className="mt-8 rounded-2xl border border-[#30363d] bg-surface-1/90 p-4 sm:p-6">
+                <form
+                  onSubmit={handleAnalyze}
+                  className="mt-8 rounded-2xl border border-[#30363d] bg-surface-1/90 p-4 sm:p-6"
+                >
                   <Label htmlFor="repo-url" className="text-sm text-[#c9d1d9]">
                     GitHub Repository URL
                   </Label>
@@ -371,9 +475,13 @@ export default function AnalyzePage() {
                     </Button>
                   </div>
 
-                  {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
+                  {error ? (
+                    <p className="mt-3 text-xs text-red-400">{error}</p>
+                  ) : null}
                 </form>
               </motion.div>
+
+              {submitting ? <LoadingPanel /> : null}
 
               {result ? (
                 <motion.div
@@ -385,7 +493,9 @@ export default function AnalyzePage() {
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div className="rounded-2xl border border-[#30363d] bg-surface-1 p-5">
                       <div className="mb-4 flex items-center justify-between">
-                        <div className="text-xs uppercase tracking-[0.18em] text-[#8b949e]">Score</div>
+                        <div className="text-xs uppercase tracking-[0.18em] text-[#8b949e]">
+                          Score
+                        </div>
                         <span className="rounded-full border border-[#2a3344] bg-background/40 px-2 py-1 text-[11px] text-[#c9d1d9]">
                           {result.score.level}
                         </span>
@@ -395,16 +505,23 @@ export default function AnalyzePage() {
                         <ScoreRing score={result.score.total} />
                       </div>
 
-                      <div className="mt-4 text-center text-sm text-[#8b949e]">Badge: {result.score.badge}</div>
+                      <div className="mt-4 text-center text-sm text-[#8b949e]">
+                        Badge: {result.score.badge}
+                      </div>
                     </div>
 
                     <div className="rounded-2xl border border-[#30363d] bg-surface-1 p-5 lg:col-span-2">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-xs uppercase tracking-[0.18em] text-[#8b949e]">Repository</div>
-                          <div className="mt-1 wrap-break-word text-lg font-semibold text-white">{result.repo.fullName}</div>
+                          <div className="text-xs uppercase tracking-[0.18em] text-[#8b949e]">
+                            Repository
+                          </div>
+                          <div className="mt-1 wrap-break-word text-lg font-semibold text-white">
+                            {result.repo.fullName}
+                          </div>
                           <p className="mt-1 text-sm leading-relaxed text-[#8b949e]">
-                            {result.repo.description || "No description provided."}
+                            {result.repo.description ||
+                              "No description provided."}
                           </p>
                         </div>
 
@@ -421,27 +538,45 @@ export default function AnalyzePage() {
 
                       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div className="rounded-lg border border-[#30363d] bg-surface-2 p-3">
-                          <div className="text-[10px] text-[#8b949e]">Stars</div>
-                          <div className="font-semibold text-white">{result.repo.stars}</div>
+                          <div className="text-[10px] text-[#8b949e]">
+                            Stars
+                          </div>
+                          <div className="font-semibold text-white">
+                            {result.repo.stars}
+                          </div>
                         </div>
                         <div className="rounded-lg border border-[#30363d] bg-surface-2 p-3">
-                          <div className="text-[10px] text-[#8b949e]">Forks</div>
-                          <div className="font-semibold text-white">{result.repo.forks}</div>
+                          <div className="text-[10px] text-[#8b949e]">
+                            Forks
+                          </div>
+                          <div className="font-semibold text-white">
+                            {result.repo.forks}
+                          </div>
                         </div>
                         <div className="rounded-lg border border-[#30363d] bg-surface-2 p-3">
-                          <div className="text-[10px] text-[#8b949e]">Files</div>
-                          <div className="font-semibold text-white">{result.snapshot.files.fileCount}</div>
+                          <div className="text-[10px] text-[#8b949e]">
+                            Files
+                          </div>
+                          <div className="font-semibold text-white">
+                            {result.snapshot.files.fileCount}
+                          </div>
                         </div>
                         <div className="rounded-lg border border-[#30363d] bg-surface-2 p-3">
-                          <div className="text-[10px] text-[#8b949e]">Last push</div>
-                          <div className="font-semibold text-white">{formatDate(result.repo.pushedAt)}</div>
+                          <div className="text-[10px] text-[#8b949e]">
+                            Last push
+                          </div>
+                          <div className="font-semibold text-white">
+                            {formatDate(result.repo.pushedAt)}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 rounded-lg border border-[#30363d] bg-surface-2 p-4">
+                      {/* <div className="mt-4 rounded-lg border border-[#30363d] bg-surface-2 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="text-sm font-medium text-white">License status</div>
+                            <div className="text-sm font-medium text-white">
+                              License status
+                            </div>
                             <div className="text-xs text-[#8b949e]">
                               {isDetectedLicense(result.repo.license)
                                 ? `Detected: ${result.repo.license}`
@@ -454,9 +589,54 @@ export default function AnalyzePage() {
                               Healthy
                             </span>
                           ) : (
-                            <span className="rounded-full border border-red-700/60 bg-red-950/30 px-2 py-1 text-xs text-red-300">Warning</span>
+                            <span className="rounded-full border border-red-700/60 bg-red-950/30 px-2 py-1 text-xs text-red-300">
+                              Warning
+                            </span>
                           )}
                         </div>
+                      </div> */}
+
+                      <div className="mt-4 rounded-lg border border-[#30363d] bg-surface-2 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              License status
+                            </div>
+                            <div className="text-xs text-[#8b949e]">
+                              {isDetectedLicense(result.repo.license)
+                                ? `Detected: ${result.repo.license}`
+                                : "No license detected"}
+                            </div>
+                          </div>
+
+                          {licenseInfo && (
+                            <span className="flex items-center gap-1 text-xs text-[#8b949e]">
+                              <Shield className="h-3.5 w-3.5" />
+                              {licenseInfo.type}
+                            </span>
+                          )}
+                        </div>
+
+                        {licenseInfo && (
+                          <div className="mt-4 border-t border-[#2a3344] pt-3">
+                            <div className="flex items-center gap-2 text-sm text-[#79c0ff] mb-2">
+                              <Info className="h-4 w-4" />
+                              {licenseInfo.title}
+                            </div>
+
+                            <ul className="space-y-2 text-xs text-[#c9d1d9]">
+                              {licenseInfo.points.map((point, idx) => (
+                                <li
+                                  key={idx}
+                                  className="flex items-start gap-2"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 text-[#58a6ff]" />
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -469,22 +649,46 @@ export default function AnalyzePage() {
                       </div>
                       <div className="h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={breakdownChart} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-                            <CartesianGrid stroke="#22324a" strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="name" tick={{ fill: "#8b949e", fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: "#8b949e", fontSize: 11 }} axisLine={false} tickLine={false} width={34} />
+                          <BarChart
+                            data={breakdownChart}
+                            margin={{
+                              top: 10,
+                              right: 10,
+                              left: -20,
+                              bottom: 10,
+                            }}
+                          >
+                            <CartesianGrid
+                              stroke="#21262d"
+                              strokeDasharray="3 3"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="name"
+                              interval={0}
+                              angle={-20}
+                              textAnchor="end"
+                              height={50}
+                              tick={{ fill: "#8b949e", fontSize: 11 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              tick={{ fill: "#8b949e", fontSize: 11 }}
+                              axisLine={false}
+                              tickLine={false}
+                              width={34}
+                            />
                             <Tooltip
                               cursor={{ fill: "rgba(88, 166, 255, 0.1)" }}
-                              contentStyle={{
-                                backgroundColor: "#0e1a2b",
-                                border: "1px solid #30363d",
-                                borderRadius: "12px",
-                                color: "#c9d1d9",
-                              }}
+                              {...tooltipStyle}
                             />
                             <Bar dataKey="score" radius={[8, 8, 0, 0]}>
                               {breakdownChart.map((entry, index) => (
-                                <Cell key={`${entry.name}-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                <Cell
+                                  key={`${entry.name}-${index}`}
+                                  fill={PIE_COLORS[index % PIE_COLORS.length]}
+                                />
                               ))}
                             </Bar>
                           </BarChart>
@@ -503,24 +707,39 @@ export default function AnalyzePage() {
                           {languageChart.length ? (
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
-                                <Pie data={languageChart} dataKey="value" nameKey="name" innerRadius={35} outerRadius={56} paddingAngle={2}>
-                                  {languageChart.map((entry) => (
-                                    <Cell key={entry.name} fill={entry.color} />
+                                <Pie
+                                  data={languageChart}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  innerRadius={38}
+                                  outerRadius={60}
+                                  paddingAngle={2}
+                                  stroke="none"
+                                >
+                                  {languageChart.map((entry, index) => (
+                                    <Cell
+                                      key={entry.name}
+                                      fill={entry.color}
+                                      style={{
+                                        transition: "transform 0.2s ease",
+                                      }}
+                                    />
                                   ))}
                                 </Pie>
+
                                 <Tooltip
-                                  formatter={(value: number) => `${Number(value).toFixed(1)}%`}
-                                  contentStyle={{
-                                    backgroundColor: "#0e1a2b",
-                                    border: "1px solid #30363d",
-                                    borderRadius: "12px",
-                                    color: "#c9d1d9",
-                                  }}
+                                  {...tooltipStyle}
+                                  formatter={(value: number, name: string) => [
+                                    `${value.toFixed(1)}%`,
+                                    name,
+                                  ]}
                                 />
                               </PieChart>
                             </ResponsiveContainer>
                           ) : (
-                            <div className="flex h-full items-center justify-center text-xs text-[#8b949e]">No language data</div>
+                            <div className="flex h-full items-center justify-center text-xs text-[#8b949e]">
+                              No language data
+                            </div>
                           )}
                         </div>
 
@@ -537,7 +756,10 @@ export default function AnalyzePage() {
                                     className="h-full rounded-full bg-linear-to-r from-[#58a6ff] to-[#79c0ff]"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${item.value}%` }}
-                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    transition={{
+                                      duration: 0.8,
+                                      ease: "easeOut",
+                                    }}
                                   />
                                 </div>
                               </div>
@@ -546,12 +768,20 @@ export default function AnalyzePage() {
 
                           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-[#2a3344] pt-3 text-xs">
                             <div>
-                              <div className="text-[#8b949e]">Conventional commits</div>
-                              <div className="font-semibold text-white">{formatPercent(result.snapshot.git.conventionalCommitRate)}</div>
+                              <div className="text-[#8b949e]">
+                                Conventional commits
+                              </div>
+                              <div className="font-semibold text-white">
+                                {formatPercent(
+                                  result.snapshot.git.conventionalCommitRate,
+                                )}
+                              </div>
                             </div>
                             <div>
                               <div className="text-[#8b949e]">Contributors</div>
-                              <div className="font-semibold text-white">{result.snapshot.git.contributors}</div>
+                              <div className="font-semibold text-white">
+                                {result.snapshot.git.contributors}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -565,13 +795,20 @@ export default function AnalyzePage() {
                         <Sparkles className="h-4 w-4 text-[#58a6ff]" />
                         Summary
                       </div>
-                      <p className="text-sm leading-relaxed text-[#c9d1d9]">{result.summary}</p>
+                      <p className="text-sm leading-relaxed text-[#c9d1d9]">
+                        {result.summary}
+                      </p>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {getSummaryHighlights(result.summary).map((snippet, idx) => (
-                          <span key={`${snippet}-${idx}`} className="rounded-full border border-[#2a3344] bg-surface-2 px-3 py-1 text-xs text-[#c9d1d9]">
-                            {snippet}
-                          </span>
-                        ))}
+                        {getSummaryHighlights(result.summary).map(
+                          (snippet, idx) => (
+                            <span
+                              key={`${snippet}-${idx}`}
+                              className="rounded-full border border-[#2a3344] bg-surface-2 px-3 py-1 text-xs text-[#c9d1d9]"
+                            >
+                              {snippet}
+                            </span>
+                          ),
+                        )}
                       </div>
                     </div>
 
