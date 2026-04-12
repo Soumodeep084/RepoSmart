@@ -10,11 +10,13 @@ import { HowItWorks } from '../components/homepage/HowItWorks';
 import { CTASection } from '../components/homepage/CTASection';
 import { Footer } from '../components/homepage/Footer';
 import { AuthDialog } from '../components/homepage/AuthDialog';
+import { LoadingVideo } from '../components/ui/loading-video';
 
 export default function App() {
   const router = useRouter();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState<'login' | 'register'>('login');
+  const [authRedirecting, setAuthRedirecting] = useState(false);
 
   const shouldReduceMotion = useReducedMotion();
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -45,6 +47,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
+      {authRedirecting ? <LoadingVideo message="Preparing your workspace…" /> : null}
       <Header onLogin={handleLogin} onRegister={handleRegister}/>
       
       <main>
@@ -77,7 +80,10 @@ export default function App() {
         open={authDialogOpen} 
         onOpenChange={setAuthDialogOpen}
         defaultTab={authDialogTab}
-        onAuthenticated={() => router.push('/analyze')}
+        onAuthenticated={() => {
+          setAuthRedirecting(true);
+          router.push('/analyze');
+        }}
       />
     </div>
   );

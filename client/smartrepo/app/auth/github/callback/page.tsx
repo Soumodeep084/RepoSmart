@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { postJson } from "@/lib/api";
 import { setAuth } from "@/lib/auth";
 import { OAUTH_STATE_STORAGE_KEY } from "@/services/githubAuth";
+import { LoadingVideo } from "@/components/ui/loading-video";
 
 type AuthApiResponse = {
   id: string;
@@ -65,15 +66,15 @@ export default function GithubCallbackPage() {
     completeGithubAuth();
   }, [router]);
 
+  if (!error) {
+    return <LoadingVideo message="Completing GitHub sign in…" />;
+  }
+
   return (
     <main className="min-h-screen bg-background text-white flex items-center justify-center px-6">
       <div className="w-full max-w-md rounded-xl border border-[#30363d] bg-surface-1 p-6 text-center">
         <h1 className="text-xl font-semibold">GitHub Authentication</h1>
-        {error ? (
-          <p className="mt-3 text-sm text-red-400">{error}</p>
-        ) : (
-          <p className="mt-3 text-sm text-[#8b949e]">Completing sign in, please wait...</p>
-        )}
+        <p className="mt-3 text-sm text-red-400">{error}</p>
       </div>
     </main>
   );

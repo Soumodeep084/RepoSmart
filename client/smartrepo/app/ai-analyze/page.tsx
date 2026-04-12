@@ -31,6 +31,7 @@ import { Footer } from "../../components/homepage/Footer";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { LoadingVideo } from "../../components/ui/loading-video";
 
 import { getAuthToken, getAuthUser, subscribeAuth } from "../../lib/auth";
 import { postJson } from "../../lib/api";
@@ -109,22 +110,6 @@ function parseAiSections(text: string) {
   const keyPoints = paragraphs.slice(1, 5);
 
   return { summary, keyPoints, paragraphs };
-}
-
-function LoadingPanel() {
-  return (
-    <div className="mt-10 rounded-2xl border border-[#30363d] bg-surface-1/80 p-6">
-      <div className="flex items-center gap-3 text-[#c9d1d9]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#58a6ff]" />
-        <span className="text-sm">Running AI scan and preparing report...</span>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="h-24 rounded-xl bg-surface-2 animate-pulse" />
-        <div className="h-24 rounded-xl bg-surface-2 animate-pulse" />
-      </div>
-    </div>
-  );
 }
 
 export default function AiAnalyzePage() {
@@ -206,6 +191,7 @@ export default function AiAnalyzePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {submitting ? <LoadingVideo message="Running AI analyzer…" /> : null}
       <Header onLogin={() => router.push("/")} onRegister={() => router.push("/")} />
 
       <main>
@@ -280,8 +266,6 @@ export default function AiAnalyzePage() {
                   {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
                 </form>
               </motion.div>
-
-              {submitting ? <LoadingPanel /> : null}
 
               {result ? (
                 <motion.div
