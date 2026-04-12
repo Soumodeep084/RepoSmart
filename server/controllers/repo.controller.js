@@ -2727,9 +2727,15 @@ exports.malwarePipelineScanRepository = async (req, res) => {
         parsed: tryParseJsonObject(generated.text),
       };
       if (debug || alwaysLog) console.log(`${logPrefix} ai:done model=${ai.model}`);
-    } catch {
+    } catch (err) {
       ai = null;
-      if (debug || alwaysLog) console.log(`${logPrefix} ai:skip`);
+      if (debug || alwaysLog) {
+        const status = err && typeof err.statusCode === "number" ? err.statusCode : null;
+        const message = err instanceof Error ? err.message : String(err);
+        const compact = (message || "").replace(/\s+/g, " ").trim();
+        const preview = compact.length > 220 ? `${compact.slice(0, 220)}...` : compact;
+        console.log(`${logPrefix} ai:skip${status ? ` status=${status}` : ""}${preview ? ` reason=${preview}` : ""}`);
+      }
     }
 
     let finalVerdict = result.verdict;
