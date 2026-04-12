@@ -44,6 +44,7 @@ import { Label } from "../../components/ui/label";
 import { getAuthToken, getAuthUser, subscribeAuth } from "../../lib/auth";
 import { postJson } from "../../lib/api";
 import { getLicenseInfo } from "@/components/ui/utils";
+import { LoadingVideo } from "../../components/ui/loading-video";
 
 type ScoreBreakdownItem = {
   key: string;
@@ -280,25 +281,6 @@ function ScoreRing({ score }: ScoreRingProps) {
   );
 }
 
-function LoadingPanel() {
-  return (
-    <div className="mt-10 rounded-2xl border border-[#30363d] bg-surface-1/80 p-6">
-      <div className="flex items-center gap-3 text-[#c9d1d9]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#58a6ff]" />
-        <span className="text-sm">
-          Analyzing repository and generating roadmap...
-        </span>
-      </div>
-
-      <div className="mt-5 space-y-3">
-        <div className="h-3 w-2/3 rounded-full bg-surface-2 animate-pulse" />
-        <div className="h-3 w-full rounded-full bg-surface-2 animate-pulse" />
-        <div className="h-3 w-4/5 rounded-full bg-surface-2 animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
 export default function AnalyzePage() {
   const router = useRouter();
 
@@ -481,7 +463,7 @@ export default function AnalyzePage() {
                 </form>
               </motion.div>
 
-              {submitting ? <LoadingPanel /> : null}
+              {submitting ? <LoadingVideo message="Analyzing repository…" /> : null}
 
               {result ? (
                 <motion.div
